@@ -25,7 +25,13 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js")
     .then(() => console.log("Service Worker registrado"));
 }
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registrado"));
+}
 </script>
+  
 body{font-family:var(--font);background:var(--g0);color:var(--g8);min-height:100vh}
 
 /* ── UPLOAD ── */

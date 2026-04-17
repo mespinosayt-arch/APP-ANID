@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,24 +8,65 @@
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
+
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+  <!-- Fuentes -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Estilos -->
+  <style>
+    :root{
+      --navy:#0c1e3c;
+      --navy2:#162d52;
+      --blue:#2563eb;
+      --blue-l:#3b82f6;
+      --green:#16a34a;
+      --green-bg:#dcfce7;
+      --green-br:#86efac;
+      --amber:#92400e;
+      --amber-bg:#fef3c7;
+      --amber-br:#fcd34d;
+      --red:#dc2626;
+      --g0:#f8fafc;
+      --g1:#f1f5f9;
+      --g2:#e2e8f0;
+      --g3:#cbd5e1;
+      --g4:#94a3b8;
+      --g5:#64748b;
+      --g6:#475569;
+      --g8:#1e293b;
+      --white:#fff;
+      --font:'Inter',sans-serif;
+      --mono:'JetBrains Mono',monospace
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0
+    }
+  </style>
 </head>
-<meta name="theme-color" content="#0f172a">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Revisión de Pagos — ANID</title>
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{--navy:#0c1e3c;--navy2:#162d52;--blue:#2563eb;--blue-l:#3b82f6;--green:#16a34a;--green-bg:#dcfce7;--green-br:#86efac;--amber:#92400e;--amber-bg:#fef3c7;--amber-br:#fcd34d;--red:#dc2626;--g0:#f8fafc;--g1:#f1f5f9;--g2:#e2e8f0;--g3:#cbd5e1;--g4:#94a3b8;--g5:#64748b;--g6:#475569;--g8:#1e293b;--white:#fff;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace}
-*{box-sizing:border-box;margin:0;padding:0}
-   <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service Worker registrado"));
-}
+
+<body>
+
+  <!-- TU CONTENIDO VA AQUÍ -->
+
+
+
+  <!-- SERVICE WORKER (SIEMPRE AL FINAL) -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker registrado"));
+    }
+  </script>
+
+</body>
+</html>
 <script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js")

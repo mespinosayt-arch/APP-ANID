@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comprobación Bancaria — ANID</title>
+<title>Revisión de Pagos — ANID</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -200,7 +200,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 
 <!-- ══ UPLOAD SCREEN ══ -->
 <div id="upload-screen">
-  <div class="app-logo">⚖ Conciliación Bancaria · ANID</div>
+  <div class="app-logo">⚖ Revisión de Pagos · ANID</div>
   <div class="upload-card">
     <h1>Subir archivos del mes</h1>
     <p>Sube la cartola del banco y el Libro Mayor. Todo se procesa en tu navegador — tus datos no salen de tu computador.</p>
@@ -249,7 +249,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
   <div class="topbar">
     <div class="topbar-row">
       <div class="topbar-title">
-        <h1>Conciliación Bancaria</h1>
+        <h1>Revisión de Pagos</h1>
         <p id="topbar-sub">ANID · Capital Humano</p>
       </div>
       <div class="topbar-actions">
@@ -1402,7 +1402,7 @@ function xNumS() { return '#,##0;(#,##0);"-"'; }
 
 async function downloadExcel() {
   const wb  = new ExcelJS.Workbook();
-  wb.creator = 'ANID · Conciliación Bancaria';
+  wb.creator = 'ANID · Revisión de Pagos';
   wb.created = new Date();
 
   const fecha = new Date().toLocaleDateString('es-CL');
@@ -1522,7 +1522,7 @@ async function downloadExcel() {
         : {fill:XL.amberLt, color:XL.amber, bold:true},
     };
     return { bg, colOverrides: colOv };
-  }, `CONCILIACIÓN BANCARIA · ${fecha}`);
+  }, `REVISIÓN DE PAGOS · ${fecha}`);
 
   // Recortar las columnas ocultas de metadatos
   const wsBanco = wb.getWorksheet('Cartola Banco');
@@ -1658,7 +1658,7 @@ async function downloadExcel() {
   }
 
   const sections = [
-    { title: 'CONCILIACIÓN BANCARIA', subtitle: fecha, isTitle: true },
+    { title: 'REVISIÓN DE PAGOS', subtitle: fecha, isTitle: true },
     null,
     { title: 'RESUMEN BANCO', isSection: true },
     resRow('Total movimientos banco', s.total),
@@ -1768,7 +1768,7 @@ function downloadHTML() {
 
 function buildResultHTML(dataJson) {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Conciliación Bancaria</title>
+<title>Revisión de Pagos</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"><\/script>
@@ -1788,7 +1788,7 @@ function buildResultHTML(dataJson) {
 .empty{text-align:center;padding:48px;color:var(--g4)}
 </style></head><body>
 <div class="topbar">
-  <div class="tr"><div class="ttl"><h1>Conciliación Bancaria</h1><p>ANID · Capital Humano · Resultado exportado</p></div>
+  <div class="tr"><div class="ttl"><h1>Revisión de Pagos</h1><p>ANID · Capital Humano · Resultado exportado</p></div>
     <div class="acts"><button class="btn-sm bgreen" id="bxl" onclick="this.textContent=\'⏳…\';dlXL().finally(()=>this.textContent=\'⬇ Excel\')">⬇ Excel</button></div>
   </div>
   <div class="tabs">
@@ -1867,7 +1867,7 @@ function bSheet(name,headers,widths,rows,styler,title){
 const hB=['#','Cartola','Fecha','Tipo','Descripción','RUT Banco','Monto ($)','Folio LM','Comprobante LM','Tipo Comp.','Criterio','Estado'];
 const wB=[5,9,12,20,52,14,16,10,17,13,13,16];
 const dB=D.banco.map((r,i)=>[i+1,r.cartola!=null?'C'+r.cartola:'',r.fecha,r.tipo_code==='A'?'ABONO':'CARGO',r.descripcion,r.rut_extraido||'',r.monto,r.folio_lm||'',r.comprobante_lm||'',r.tipo_comprobante||'',r.criterio||'',r.estado,r.tipo_code,r.estado]);
-const wsB2=bSheet('Cartola Banco',hB,wB,dB,(row)=>{const tc=row[12],es=row[13],ic=es==='CONCILIADO';return{bg:ic?(tc==='A'?XC.greenBg:XC.blueBg):XC.amberBg,colOverrides:{3:tc==='A'?{fill:XC.blueLt,color:'1D4ED8',bold:true}:{fill:XC.pinkBg,color:'9D174D',bold:true},6:{color:tc==='A'?XC.green:XC.red,bold:true,align:'right'},10:row[10]==='RUT+Monto'?{fill:XC.mGreen,color:'065F46',bold:true}:row[10]==='Solo Monto'?{fill:XC.mAmber,color:XC.amber}:{},11:ic?{fill:XC.greenLt,color:XC.green,bold:true}:{fill:XC.amberLt,color:XC.amber,bold:true}}};},'CONCILIACIÓN BANCARIA · '+fecha);
+const wsB2=bSheet('Cartola Banco',hB,wB,dB,(row)=>{const tc=row[12],es=row[13],ic=es==='CONCILIADO';return{bg:ic?(tc==='A'?XC.greenBg:XC.blueBg):XC.amberBg,colOverrides:{3:tc==='A'?{fill:XC.blueLt,color:'1D4ED8',bold:true}:{fill:XC.pinkBg,color:'9D174D',bold:true},6:{color:tc==='A'?XC.green:XC.red,bold:true,align:'right'},10:row[10]==='RUT+Monto'?{fill:XC.mGreen,color:'065F46',bold:true}:row[10]==='Solo Monto'?{fill:XC.mAmber,color:XC.amber}:{},11:ic?{fill:XC.greenLt,color:XC.green,bold:true}:{fill:XC.amberLt,color:XC.amber,bold:true}}};},'REVISIÓN DE PAGOS · '+fecha);
 wsB2.getColumn(13).hidden=true;wsB2.getColumn(14).hidden=true;
 
 // LM
@@ -1887,7 +1887,7 @@ wsN2.getColumn(7).hidden=true;
 // Resumen
 const wsR2=wb2.addWorksheet('Resumen');
 wsR2.getColumn(1).width=34;wsR2.getColumn(2).width=22;
-[[1,'CONCILIACIÓN BANCARIA',true,26,'navy'],[2,'Generado: '+fecha+' · ANID Capital Humano',false,16,'navy2'],[3,'',true,8,'nav'],[4,'BANCO',true,22,'section'],[5,'Total movimientos banco',false,18,'',s2.total],[6,'Conciliados',false,18,'ok',s2.conciliados],[7,'No conciliados banco',false,18,'warn',s2.no_conciliados],[8,'% conciliación',false,18,'bold',s2.pct_str||(s2.conciliados/s2.total*100).toFixed(1)+'%'],[9,'',true,8],[10,'CRITERIOS DE MATCHING',true,22,'section'],[11,'Por RUT+Monto (exacto)',false,18,'ok',s2.por_rut_monto],[12,'Solo por Monto (fallback)',false,18,'info',s2.por_monto],[13,'',true,8],[14,'TOTALES BANCO ($)',true,22,'section'],[15,'Total abonos / ingresos',false,18,'ok',s2.total_abonos,true],[16,'Total cargos / egresos',false,18,'warn',s2.total_cargos,true],[17,'Diferencia neta',false,18,'bold',s2.total_abonos-s2.total_cargos,true],[18,'',true,8],[19,'LIBRO MAYOR',true,22,'section'],[20,'Total registros LM',false,18,'',s2.lm_total],[21,'LM conciliados',false,18,'ok',s2.lm_conciliados],[22,'LM no conciliados',false,18,'warn',s2.lm_no_conciliados]].forEach(([ri,label,isSec,ht,cls,val,numFmt])=>{
+[[1,'REVISIÓN DE PAGOS',true,26,'navy'],[2,'Generado: '+fecha+' · ANID Capital Humano',false,16,'navy2'],[3,'',true,8,'nav'],[4,'BANCO',true,22,'section'],[5,'Total movimientos banco',false,18,'',s2.total],[6,'Conciliados',false,18,'ok',s2.conciliados],[7,'No conciliados banco',false,18,'warn',s2.no_conciliados],[8,'% conciliación',false,18,'bold',s2.pct_str||(s2.conciliados/s2.total*100).toFixed(1)+'%'],[9,'',true,8],[10,'CRITERIOS DE MATCHING',true,22,'section'],[11,'Por RUT+Monto (exacto)',false,18,'ok',s2.por_rut_monto],[12,'Solo por Monto (fallback)',false,18,'info',s2.por_monto],[13,'',true,8],[14,'TOTALES BANCO ($)',true,22,'section'],[15,'Total abonos / ingresos',false,18,'ok',s2.total_abonos,true],[16,'Total cargos / egresos',false,18,'warn',s2.total_cargos,true],[17,'Diferencia neta',false,18,'bold',s2.total_abonos-s2.total_cargos,true],[18,'',true,8],[19,'LIBRO MAYOR',true,22,'section'],[20,'Total registros LM',false,18,'',s2.lm_total],[21,'LM conciliados',false,18,'ok',s2.lm_conciliados],[22,'LM no conciliados',false,18,'warn',s2.lm_no_conciliados]].forEach(([ri,label,isSec,ht,cls,val,numFmt])=>{
   if(!label)return;
   const r=wsR2.getRow(ri);r.height=ht;
   if(isSec){

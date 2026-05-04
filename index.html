@@ -241,6 +241,25 @@ body{font-family:var(--font);background:var(--g0);color:var(--g8);min-height:100
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g4);font-size:13px;pointer-events:none}
 select{padding:8px 12px;border:1px solid var(--g2);border-radius:7px;font-size:13px;font-family:var(--font);background:white;color:var(--g8);outline:none;cursor:pointer}
 .toolbar-count{margin-left:auto;font-size:11px;color:var(--g4);font-family:var(--mono)}
+.date-filter-group{display:flex;align-items:center;gap:6px}
+.date-filter-group label{font-size:11px;color:var(--g5);font-weight:600;white-space:nowrap}
+.date-filter-group input[type=date]{padding:7px 10px;border:1px solid var(--g2);border-radius:7px;font-size:12px;font-family:var(--mono);background:white;color:var(--g8);outline:none}
+.date-filter-group input[type=date]:focus{border-color:var(--blue-l);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.date-sep{font-size:11px;color:var(--g4)}
+/* Multi-select conciliar */
+.cm-checkbox-wrap{width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+.cm-chk{width:18px;height:18px;cursor:pointer;accent-color:var(--blue)}
+.conciliar-lm-table tr.cm-selected td{background:#eff6ff!important;outline:2px solid var(--blue-l);outline-offset:-2px}
+.cm-totals-bar{padding:12px 24px;background:var(--navy);display:flex;gap:20px;align-items:center;flex-shrink:0}
+.cm-tot-item .cm-tot-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.45);margin-bottom:2px}
+.cm-tot-item .cm-tot-val{font-size:14px;font-weight:700;font-family:var(--mono);color:white}
+.cm-tot-diff{font-size:13px;font-weight:700;font-family:var(--mono)}
+.cm-tot-diff.ok{color:#4ade80}
+.cm-tot-diff.over{color:#f87171}
+.cm-tot-diff.zero{color:#6ee7b7}
+.btn-confirmar-conc{padding:9px 20px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .15s;display:none}
+.btn-confirmar-conc:hover{background:#15803d;transform:translateY(-1px)}
+.btn-confirmar-conc.visible{display:inline-flex;align-items:center;gap:6px}
 .legend{display:flex;gap:14px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--g5)}
 .legend-dot{width:10px;height:10px;border-radius:3px}
@@ -372,8 +391,8 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
         <span class="brand-badge-dot"></span>
         ANID
       </div>
-      <div class="brand-title">Comprobación<br>de <span>Tesorería</span></div>
-      <p class="brand-subtitle">Plataforma de revisión y comprobación de pagos entre cartola bancaria y Libro Mayor.</p>
+      <div class="brand-title">Comprobación<br><span>Bancaria</span></div>
+      <p class="brand-subtitle">Plataforma de revisión y comprobación bancaria de pagos entre cartola y Libro Mayor.</p>
 
       <div class="brand-features">
         <div class="brand-feature">
@@ -547,6 +566,13 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
         <option value="Solo Monto">≈ Solo Monto</option>
       </select>
       <select id="r-cuenta" onchange="onFilter()" style="display:none"><option value="">Todas las cuentas</option></select>
+      <div class="date-filter-group" id="jef-date-filters" style="display:none">
+        <label>Fecha pago:</label>
+        <input type="date" id="r-desde" onchange="onFilter()" title="Desde">
+        <span class="date-sep">—</span>
+        <input type="date" id="r-hasta" onchange="onFilter()" title="Hasta">
+        <button onclick="clearJefDates()" style="padding:5px 10px;border:1px solid var(--g2);border-radius:6px;background:white;font-size:11px;color:var(--g5);cursor:pointer" title="Limpiar fechas">✕</button>
+      </div>
       <div class="toolbar-count" id="r-count"></div>
     </div>
     <div class="table-wrap">
@@ -610,18 +636,40 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
     <div class="conciliar-body">
       <table class="conciliar-lm-table">
         <thead><tr>
+          <th style="width:36px;text-align:center"><input type="checkbox" id="cm-chk-all" title="Seleccionar/deseleccionar todos" onchange="toggleSelectAll(this.checked)"></th>
           <th>Fecha</th><th>Tipo</th><th>Folio</th><th>RUT</th>
           <th>Glosa</th><th>Docto.</th>
           <th style="text-align:right">Debe ($)</th>
           <th style="text-align:right">Haber ($)</th>
-          <th>Coincidencia</th><th>Seleccionar</th>
+          <th>Coincidencia</th>
         </tr></thead>
         <tbody id="cm-tbody"></tbody>
       </table>
     </div>
+    <div class="cm-totals-bar" id="cm-totals-bar" style="display:none">
+      <div class="cm-tot-item">
+        <div class="cm-tot-lbl">Monto banco</div>
+        <div class="cm-tot-val" id="cm-tot-banco">$0</div>
+      </div>
+      <div class="cm-tot-item">
+        <div class="cm-tot-lbl">Seleccionado LM</div>
+        <div class="cm-tot-val" id="cm-tot-lm">$0</div>
+      </div>
+      <div class="cm-tot-item">
+        <div class="cm-tot-lbl">Diferencia</div>
+        <div class="cm-tot-diff" id="cm-tot-diff">$0</div>
+      </div>
+      <div class="cm-tot-item" style="margin-left:4px">
+        <div class="cm-tot-lbl">Seleccionados</div>
+        <div class="cm-tot-val" id="cm-tot-cnt">0</div>
+      </div>
+    </div>
     <div class="conciliar-footer">
       <span class="conciliar-footer-hint" id="cm-count-hint">— registros disponibles</span>
-      <button class="btn-sm" style="background:var(--g1);color:var(--g6);border-color:var(--g2)" onclick="closeConciliarModal()">Cancelar</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-sm" style="background:var(--g1);color:var(--g6);border-color:var(--g2)" onclick="closeConciliarModal()">Cancelar</button>
+        <button class="btn-confirmar-conc" id="cm-btn-confirmar" onclick="confirmarMultiConciliar()">✅ Confirmar selección (<span id="cm-cnt-label">0</span>)</button>
+      </div>
     </div>
   </div>
 </div>
@@ -767,7 +815,24 @@ function parseLM(ab) {
 // ══════════════════════════════════════════════
 function parseJefatura(ab) {
   const wb = XLSX.read(ab, { type:'array', cellDates:true });
-  const sheetName = wb.SheetNames.includes('Ingreso de Expediente') ? 'Ingreso de Expediente' : wb.SheetNames[0];
+  // Buscar la hoja con datos reales: entre las que contengan "Ingreso", elegir la de más filas.
+  // Esto resuelve el caso Access donde "Ingreso de Expediente" está vacía y los datos
+  // reales están en "Ingreso de Expediente (2)" u otra variante numerada.
+  let sheetName = wb.SheetNames[0];
+  const _candidates = wb.SheetNames.filter(function(n){ return n.toLowerCase().includes('ingreso'); });
+  if (_candidates.length === 1) {
+    sheetName = _candidates[0];
+  } else if (_candidates.length > 1) {
+    var _maxRows = -1;
+    for (var _i = 0; _i < _candidates.length; _i++) {
+      var _s = wb.Sheets[_candidates[_i]];
+      var _ref = _s['!ref'];
+      if (!_ref) continue;
+      var _range = XLSX.utils.decode_range(_ref);
+      var _nRows = _range.e.r - _range.s.r;
+      if (_nRows > _maxRows) { _maxRows = _nRows; sheetName = _candidates[_i]; }
+    }
+  }
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:null });
   return rows.slice(1).filter(r => r[0]).map(r => ({
     ted:             String(r[0]||'').trim(),
@@ -784,6 +849,7 @@ function parseJefatura(ab) {
     cuenta:          String(r[11]||'').trim(),
     moneda:          String(r[12]||'').trim(),
     nomina:          String(r[13]||'').trim(),
+    observacion:     String(r[14]||'').trim(),
   }));
 }
 
@@ -1084,6 +1150,12 @@ function switchTab(tab) {
     rC.style.display='none'; rT.style.display='none'; rCr.style.display='none'; rCuenta.style.display='none';
   }
   document.getElementById('r-estado').style.display=(tab==='lm'||tab==='jef')?'none':'';
+  // Filtros de fecha: solo visibles en pestaña Jefatura
+  document.getElementById('jef-date-filters').style.display=(tab==='jef')?'flex':'none';
+  if (tab!=='jef') {
+    document.getElementById('r-desde').value='';
+    document.getElementById('r-hasta').value='';
+  }
   applyFilters(); renderTable();
 }
 
@@ -1118,9 +1190,31 @@ function applyFilters() {
     if (fC&&r.cartola!==undefined&&String(r.cartola)!==fC) return false;
     if (fCr&&r.criterio!==fCr) return false;
     if (fCuenta&&r.cuenta!==undefined&&r.cuenta!==fCuenta) return false;
+    // Filtro fechas (solo Jefatura — usa fecha_pago)
+    if (currentTab==='jef') {
+      const fDesde = document.getElementById('r-desde').value;
+      const fHasta = document.getElementById('r-hasta').value;
+      if (fDesde || fHasta) {
+        // Normalizar fecha_pago a YYYY-MM-DD para comparar lexicográficamente
+        let fp = r.fecha_pago || '';
+        // Soportar formato dd/mm/yyyy (toLocaleDateString chileno) y yyyy-mm-dd
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fp)) {
+          const p = fp.split('/');
+          fp = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+        }
+        if (fDesde && fp < fDesde) return false;
+        if (fHasta && fp > fHasta) return false;
+      }
+    }
     return true;
   });
   document.getElementById('r-count').textContent=filtered.length+' registros';
+}
+
+function clearJefDates() {
+  document.getElementById('r-desde').value='';
+  document.getElementById('r-hasta').value='';
+  onFilter();
 }
 
 // ── RENDER ──
@@ -1170,7 +1264,7 @@ function renderTable() {
     thead.innerHTML=`<tr>
       <th>#</th><th>N° TED</th><th>Fecha Pago</th><th>Tipo de Pago</th>
       <th style="text-align:right">Monto Jef. ($)</th><th>Moneda</th><th>Nómina</th><th>Cuenta</th><th>Analista</th>
-      <th>① Monto en Banco</th><th>② RUT validado</th><th>③ Nómina en Banco</th><th>④ TED en LM</th><th>Estado</th>
+      <th>① Monto en Banco</th><th>② RUT validado</th><th>③ Nómina en Banco</th><th>④ TED en LM</th><th>Estado</th><th>Observación</th>
     </tr>`;
     tbody.innerHTML=rows.length?rows.map((r,i)=>{
       const bgRow = r.estado_jef==='VALIDADO'?'conciliado':r.estado_jef==='SIN VALIDAR'?'no-conciliado':'';
@@ -1200,8 +1294,9 @@ function renderTable() {
         <td style="white-space:normal;min-width:150px">${chk(r.nomina_ok, r.nomina_detalle, !r.monto_ok||!r.rut_ok)}</td>
         <td style="white-space:normal;min-width:160px">${chk(r.ted_lm_ok, r.ted_lm_detalle, false)}</td>
         <td>${estPill}</td>
+        <td style="font-size:11px;color:var(--g6);max-width:200px;white-space:normal">${r.observacion?'<span style="font-style:italic;color:var(--amber)">'+esc(r.observacion)+'</span>':'—'}</td>
       </tr>`;
-    }).join(''):'<tr><td colspan="14" class="empty">Sin datos de jefatura</td></tr>';
+    }).join(''):'<tr><td colspan="15" class="empty">Sin datos de jefatura</td></tr>';
 
   } else {
     thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th>Acción</th></tr>`;
@@ -1489,6 +1584,7 @@ function closeMontosModal() {
 // ══════════════════════════════════════════════
 let _conciliarBancoIdx = null;
 let _cmLMRows = []; // filas LM filtradas actuales
+let _cmSelectedLm = new Set(); // índices LM seleccionados para conciliar múltiple
 
 function openConciliarModal(bancoIdx) {
   _conciliarBancoIdx = bancoIdx;
@@ -1509,10 +1605,16 @@ function openConciliarModal(bancoIdx) {
     </div>
     ${br.rut_extraido ? `<div class="conciliar-meta-item"><div class="cm-lbl">RUT Banco</div><div class="cm-val">${br.rut_extraido}</div></div>` : ''}`;
 
+  // Reset selección múltiple
+  _cmSelectedLm = new Set();
+
   // Reset filtros
   document.getElementById('cm-search').value = '';
   document.getElementById('cm-tipo').value = '';
+  const chkAll = document.getElementById('cm-chk-all');
+  if (chkAll) chkAll.checked = false;
   filterConciliarLM();
+  updateCMTotals();
 
   document.getElementById('conciliar-modal').style.display = 'flex';
 }
@@ -1565,52 +1667,126 @@ function renderConciliarLMTable(br) {
       : montoMatch
         ? '<span class="match-tag exact">✓ Monto exacto</span>'
         : '<span class="match-tag near">≈ Diferente</span>';
-    const rowCls = montoMatch ? 'match-exact' : '';
-    return `<tr class="${rowCls}" onclick="selectLMForConciliar(${r._idx})">
+    const isSel  = _cmSelectedLm.has(r._idx);
+    const rowCls = isSel ? 'cm-selected' : (montoMatch ? 'match-exact' : '');
+    const chkd   = isSel ? 'checked' : '';
+    return `<tr class="${rowCls}" onclick="toggleLMSelect(${r._idx})" style="cursor:pointer">
+      <td class="cm-checkbox-wrap" onclick="event.stopPropagation()">
+        <input type="checkbox" class="cm-chk" ${chkd} onchange="toggleLMSelect(${r._idx})">
+      </td>
       <td class="mono" style="font-size:11px">${r.fecha}</td>
       <td>${tipoPill(r.tipo)}</td>
       <td>${r.folio!=null?'<span class="folio-tag">'+r.folio+'</span>':'—'}</td>
       <td class="mono" style="font-size:11px;color:var(--g5)">${r.rut||'—'}</td>
-      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.glosa)}">${esc(r.glosa)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.glosa)}">${esc(r.glosa)}</td>
       <td class="mono" style="font-size:11px">${r.docto||'—'}</td>
       <td class="amount pos">${r.debe>0?fmtNum(r.debe):'—'}</td>
       <td class="amount neg">${r.haber>0?fmtNum(r.haber):'—'}</td>
       <td>${matchTag}</td>
-      <td><button class="btn-select-lm" onclick="event.stopPropagation();selectLMForConciliar(${r._idx})">Seleccionar ›</button></td>
     </tr>`;
   }).join('');
 }
 
-function selectLMForConciliar(lmIdx) {
-  if (_conciliarBancoIdx === null) return;
+// Toggle selección de una fila LM
+function toggleLMSelect(lmIdx) {
+  if (_cmSelectedLm.has(lmIdx)) {
+    _cmSelectedLm.delete(lmIdx);
+  } else {
+    _cmSelectedLm.add(lmIdx);
+  }
+  updateCMTotals();
+  // Re-renderizar solo para actualizar checkboxes sin perder scroll
   const br = DATA.banco[_conciliarBancoIdx];
-  const lr = DATA.lm[lmIdx];
+  renderConciliarLMTable(br);
+}
 
-  // Actualizar fila banco
+// Seleccionar / deseleccionar todos los visibles
+function toggleSelectAll(checked) {
+  _cmLMRows.forEach(r => {
+    if (checked) _cmSelectedLm.add(r._idx);
+    else _cmSelectedLm.delete(r._idx);
+  });
+  updateCMTotals();
+  const br = DATA.banco[_conciliarBancoIdx];
+  renderConciliarLMTable(br);
+}
+
+// Actualizar panel de totales
+function updateCMTotals() {
+  const br = _conciliarBancoIdx !== null ? DATA.banco[_conciliarBancoIdx] : null;
+  const montoBanco = br ? br.monto : 0;
+  let montoLM = 0;
+  _cmSelectedLm.forEach(idx => {
+    const lr = DATA.lm[idx];
+    if (lr) montoLM += (lr.debe > 0 ? lr.debe : lr.haber) || 0;
+  });
+  const cnt = _cmSelectedLm.size;
+  const diff = montoLM - montoBanco;
+
+  const bar = document.getElementById('cm-totals-bar');
+  const btnConf = document.getElementById('cm-btn-confirmar');
+  const cntLabel = document.getElementById('cm-cnt-label');
+
+  if (bar) bar.style.display = cnt > 0 ? 'flex' : 'none';
+  if (btnConf) { btnConf.classList.toggle('visible', cnt > 0); }
+  if (cntLabel) cntLabel.textContent = cnt;
+
+  const elBanco = document.getElementById('cm-tot-banco');
+  const elLM    = document.getElementById('cm-tot-lm');
+  const elDiff  = document.getElementById('cm-tot-diff');
+  const elCnt   = document.getElementById('cm-tot-cnt');
+  if (elBanco) elBanco.textContent = '$' + fmtNum(montoBanco);
+  if (elLM)    elLM.textContent    = '$' + fmtNum(montoLM);
+  if (elDiff) {
+    const absDiff = Math.abs(diff);
+    elDiff.textContent = (diff === 0 ? '✓ Cuadra' : (diff > 0 ? '+' : '-') + '$' + fmtNum(absDiff));
+    elDiff.className = 'cm-tot-diff ' + (diff === 0 ? 'zero' : diff < 0 ? 'ok' : 'over');
+  }
+  if (elCnt) elCnt.textContent = cnt;
+}
+
+// Confirmar la conciliación con múltiples LM
+function confirmarMultiConciliar() {
+  if (_conciliarBancoIdx === null || _cmSelectedLm.size === 0) return;
+  const br = DATA.banco[_conciliarBancoIdx];
+
+  const folios = [];
+  const doctos = [];
+  _cmSelectedLm.forEach(lmIdx => {
+    const lr = DATA.lm[lmIdx];
+    if (!lr) return;
+    lr.conciliado = true;
+    lr.criterio = (br.rut_extraido && lr.rut_num === br.rut_extraido) ? 'RUT+Monto' : 'Solo Monto';
+    if (lr.folio != null) folios.push(lr.folio);
+    if (lr.docto) doctos.push(lr.docto);
+  });
+
+  // Marcar fila banco
   br.estado           = 'CONCILIADO';
-  br.folio_lm         = lr.folio;
-  br.comprobante_lm   = lr.docto || '';
-  br.tipo_comprobante = lr.tipo  || '';
-  br.criterio         = (br.rut_extraido && lr.rut_num === br.rut_extraido) ? 'RUT+Monto' : 'Solo Monto';
+  br.folio_lm         = folios.length ? folios.join(', ') : null;
+  br.comprobante_lm   = doctos.join(', ');
+  br.tipo_comprobante = _cmSelectedLm.size > 1 ? 'Multi-LM' : (DATA.lm[Array.from(_cmSelectedLm)[0]]?.tipo || '');
+  br.criterio         = 'Solo Monto';
 
-  // Actualizar fila LM
-  lr.conciliado = true;
-  lr.criterio   = br.criterio;
+  const msg = _cmSelectedLm.size === 1
+    ? `✅ Conciliado · Banco ↔ LM folio ${folios[0]||doctos[0]||'—'}`
+    : `✅ Conciliado · Banco ↔ ${_cmSelectedLm.size} registros LM`;
 
   closeConciliarModal();
   recalcSummary();
   applyFilters();
   renderTable();
   updateSummaryCards();
-
-  // Feedback visual breve
-  showToast(`✅ Conciliado · Banco ↔ LM folio ${lr.folio||lr.docto||lmIdx}`);
+  showToast(msg);
 }
 
 function closeConciliarModal() {
   document.getElementById('conciliar-modal').style.display = 'none';
   _conciliarBancoIdx = null;
   _cmLMRows = [];
+  _cmSelectedLm = new Set();
+  const bar = document.getElementById('cm-totals-bar');
+  if (bar) bar.style.display = 'none';
 }
 
 // Toast de confirmación

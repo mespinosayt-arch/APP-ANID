@@ -241,6 +241,16 @@ body{font-family:var(--font);background:var(--g0);color:var(--g8);min-height:100
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g4);font-size:13px;pointer-events:none}
 select{padding:8px 12px;border:1px solid var(--g2);border-radius:7px;font-size:13px;font-family:var(--font);background:white;color:var(--g8);outline:none;cursor:pointer}
 .toolbar-count{margin-left:auto;font-size:11px;color:var(--g4);font-family:var(--mono)}
+.tb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tb-row select,.tb-row input[type=text],.tb-row input[type=number]{height:34px;padding:0 10px;border:1px solid var(--g2);border-radius:7px;font-size:12px;font-family:var(--font);background:white;color:var(--g8);outline:none}
+.tb-row select:focus,.tb-row input:focus{border-color:var(--blue-l);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.tb-sep{width:1px;height:22px;background:var(--g2);flex-shrink:0;margin:0 2px}
+.tb-lbl{font-size:10px;font-weight:700;color:var(--g4);white-space:nowrap;letter-spacing:.04em}
+.tb-reset{padding:5px 12px;border:1px solid var(--g2);border-radius:7px;background:white;font-size:11px;color:var(--g5);cursor:pointer;font-family:var(--font);white-space:nowrap}
+.tb-reset:hover{background:var(--g0);color:var(--g8)}
+.tb-monto-group{display:flex;align-items:center;gap:5px}
+.tb-monto-group input{width:130px!important}
+.tb-hidden{display:none!important}
 .date-filter-group{display:flex;align-items:center;gap:6px}
 .date-filter-group label{font-size:11px;color:var(--g5);font-weight:600;white-space:nowrap}
 .date-filter-group input[type=date]{padding:7px 10px;border:1px solid var(--g2);border-radius:7px;font-size:12px;font-family:var(--mono);background:white;color:var(--g8);outline:none}
@@ -548,32 +558,82 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
       <div class="legend-item" style="margin-left:8px"><span class="pill cr-rut">🎯 RUT+Monto</span><span style="margin-left:4px;font-size:11px;color:var(--g5)">coincidencia exacta</span></div>
       <div class="legend-item"><span class="pill cr-rut-warn">⚠ Solo Monto · sin RUT</span><span style="margin-left:4px;font-size:11px;color:var(--g5)">RUT no validado — revisar</span></div>
     </div>
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">⌕</span>
-        <input type="text" id="r-search" placeholder="Buscar descripción, RUT, monto, comprobante…" oninput="onSearch()">
+    <div class="toolbar" id="main-toolbar">
+
+      <!-- FILA 1: búsqueda + reset + contador (siempre visible) -->
+      <div class="tb-row">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="r-search" placeholder="Buscar en todos los campos…" oninput="onSearch()">
+        </div>
+        <div class="tb-sep"></div>
+
+        <!-- BANCO: estado + criterio + cartola -->
+        <select id="r-estado" onchange="onFilter()" class="tb-hidden">
+          <option value="">Todos los estados</option>
+          <option value="CONCILIADO">✓ Conciliados</option>
+          <option value="NO CONCILIADO">⚠ No conciliados</option>
+        </select>
+        <select id="r-criterio" onchange="onFilter()" class="tb-hidden">
+          <option value="">Todos los criterios</option>
+          <option value="RUT+Monto">🎯 RUT+Monto</option>
+          <option value="Solo Monto">≈ Solo Monto</option>
+        </select>
+        <select id="r-cartola" onchange="onFilter()" class="tb-hidden"><option value="">Todas las cartolas</option></select>
+        <select id="r-tipo-banco" onchange="onFilter()" class="tb-hidden"><option value="">Todos los tipos</option></select>
+
+        <!-- LM: tipo + conciliado -->
+        <select id="r-tipo-lm" onchange="onFilter()" class="tb-hidden"><option value="">Todos los tipos LM</option></select>
+        <select id="r-conciliado-lm" onchange="onFilter()" class="tb-hidden">
+          <option value="">Todos los estados</option>
+          <option value="1">✓ Conciliados</option>
+          <option value="0">⚠ No conciliados</option>
+        </select>
+
+        <!-- JEF: cuenta + estado_jef + analista + PP + tipo_pago + moneda -->
+        <select id="r-cuenta" onchange="onFilter()" class="tb-hidden"><option value="">Todas las cuentas</option></select>
+        <select id="r-estado-jef" onchange="onFilter()" class="tb-hidden">
+          <option value="">Todos los estados</option>
+          <option value="VALIDADO">✅ Validado</option>
+          <option value="OBSERVADO">⚠ Observado</option>
+          <option value="SIN VALIDAR">✗ Sin validar</option>
+        </select>
+        <select id="r-analista" onchange="onFilter()" class="tb-hidden"><option value="">Todos los analistas</option></select>
+        <select id="r-pp" onchange="onFilter()" class="tb-hidden"><option value="">Todos los PP</option></select>
+        <select id="r-tipo-jef" onchange="onFilter()" class="tb-hidden"><option value="">Todos los tipos</option></select>
+        <select id="r-moneda" onchange="onFilter()" class="tb-hidden"><option value="">Todas las monedas</option></select>
+
+        <!-- NOC: fuente -->
+        <select id="r-fuente" onchange="onFilter()" class="tb-hidden">
+          <option value="">Banco + LM</option>
+          <option value="banco">Solo Banco</option>
+          <option value="lm">Solo LM</option>
+        </select>
+
+        <button class="tb-reset" onclick="resetFilters()" title="Limpiar todos los filtros">↺ Limpiar</button>
+        <div class="toolbar-count" id="r-count" style="margin-left:auto"></div>
       </div>
-      <select id="r-estado" onchange="onFilter()">
-        <option value="">Todos los estados</option>
-        <option value="CONCILIADO">✓ Conciliados</option>
-        <option value="NO CONCILIADO">⚠ No conciliados</option>
-      </select>
-      <select id="r-tipo" onchange="onFilter()"><option value="">Todos los tipos</option></select>
-      <select id="r-cartola" onchange="onFilter()"><option value="">Todas las cartolas</option></select>
-      <select id="r-criterio" onchange="onFilter()">
-        <option value="">Todos los criterios</option>
-        <option value="RUT+Monto">🎯 RUT+Monto</option>
-        <option value="Solo Monto">≈ Solo Monto</option>
-      </select>
-      <select id="r-cuenta" onchange="onFilter()" style="display:none"><option value="">Todas las cuentas</option></select>
-      <div class="date-filter-group" id="jef-date-filters" style="display:none">
-        <label>Fecha pago:</label>
-        <input type="date" id="r-desde" onchange="onFilter()" title="Desde">
-        <span class="date-sep">—</span>
-        <input type="date" id="r-hasta" onchange="onFilter()" title="Hasta">
-        <button onclick="clearJefDates()" style="padding:5px 10px;border:1px solid var(--g2);border-radius:6px;background:white;font-size:11px;color:var(--g5);cursor:pointer" title="Limpiar fechas">✕</button>
+
+      <!-- FILA 2: rango monto + fechas (contextual por tab) -->
+      <div class="tb-row" id="tb-row2" style="display:none">
+        <!-- Rango monto (todos los tabs) -->
+        <span class="tb-lbl" id="lbl-monto">Monto:</span>
+        <div class="tb-monto-group" id="grp-monto">
+          <input type="number" id="r-monto-min" placeholder="Desde $" oninput="onFilter()" min="0">
+          <span class="tb-lbl">—</span>
+          <input type="number" id="r-monto-max" placeholder="Hasta $" oninput="onFilter()" min="0">
+        </div>
+        <div class="tb-sep" id="sep-fecha" style="display:none"></div>
+        <!-- Fechas (banco, lm, jef) -->
+        <span class="tb-lbl" id="lbl-fecha" style="display:none"></span>
+        <div class="date-filter-group" id="grp-fecha" style="display:none">
+          <input type="date" id="r-desde" onchange="onFilter()">
+          <span class="date-sep">—</span>
+          <input type="date" id="r-hasta" onchange="onFilter()">
+          <button onclick="clearDates()" class="tb-reset" title="Limpiar fechas">✕</button>
+        </div>
       </div>
-      <div class="toolbar-count" id="r-count"></div>
+
     </div>
     <div class="table-wrap">
       <div class="table-scroll"><table><thead id="r-thead"></thead><tbody id="r-tbody"></tbody></table></div>
@@ -1121,54 +1181,122 @@ function resetApp() {
 // ══════════════════════════════════════════════
 // TAB / FILTER / TABLE
 // ══════════════════════════════════════════════
+// IDs de todos los controles que pueden estar visible u ocultos por tab
+const TAB_SHOW = {
+  banco: ['r-estado','r-criterio','r-cartola','r-tipo-banco'],
+  lm:    ['r-tipo-lm','r-conciliado-lm'],
+  jef:   ['r-cuenta','r-estado-jef','r-analista','r-pp','r-tipo-jef','r-moneda'],
+  noc:   ['r-fuente'],
+};
+const ALL_TAB_CONTROLS = ['r-estado','r-criterio','r-cartola','r-tipo-banco',
+  'r-tipo-lm','r-conciliado-lm','r-cuenta','r-estado-jef','r-analista',
+  'r-pp','r-tipo-jef','r-moneda','r-fuente'];
+
 function switchTab(tab) {
   currentTab=tab; currentPage=1;
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['banco','lm','noc','jef'][i]===tab));
-  document.getElementById('r-search').value='';
-  document.getElementById('r-estado').value='';
-  const rT=document.getElementById('r-tipo');
-  const rC=document.getElementById('r-cartola');
-  const rCr=document.getElementById('r-criterio');
-  rT.innerHTML='<option value="">Todos los tipos</option>';
-  rC.innerHTML='<option value="">Todas las cartolas</option>';
 
-  const rCuenta = document.getElementById('r-cuenta');
-  rCuenta.innerHTML = '<option value="">Todas las cuentas</option>';
+  // Ocultar todos los controles específicos de tab
+  ALL_TAB_CONTROLS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.classList.add('tb-hidden'); el.value=''; }
+  });
 
+  // Mostrar los del tab actual
+  (TAB_SHOW[tab]||[]).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('tb-hidden');
+  });
+
+  // Poblar selects dinámicos
+  const jef = DATA.jefatura||[];
   if (tab==='banco') {
+    const rT=document.getElementById('r-tipo-banco');
+    const rC=document.getElementById('r-cartola');
+    rT.innerHTML='<option value="">Todos los tipos</option>';
+    rC.innerHTML='<option value="">Todas las cartolas</option>';
     [...new Set(DATA.banco.map(r=>r.tipo))].sort().forEach(t=>rT.add(new Option(t,t)));
-    [...new Set(DATA.banco.map(r=>r.cartola).filter(c=>c!=null))].sort((a,b)=>a-b).forEach(c=>rC.add(new Option('Cartola '+c,c)));
-    rC.style.display=''; rT.style.display=''; rCr.style.display=''; rCuenta.style.display='none';
+    [...new Set(DATA.banco.map(r=>r.cartola).filter(c=>c!=null))].sort((a,b)=>a-b)
+      .forEach(c=>rC.add(new Option('Cartola '+c,c)));
   } else if (tab==='lm') {
-    [...new Set(DATA.lm.map(r=>r.tipo))].sort().forEach(t=>rT.add(new Option(t,t)));
-    rC.style.display='none'; rT.style.display=''; rCr.style.display='none'; rCuenta.style.display='none';
+    const rT=document.getElementById('r-tipo-lm');
+    rT.innerHTML='<option value="">Todos los tipos LM</option>';
+    [...new Set(DATA.lm.map(r=>r.tipo).filter(Boolean))].sort().forEach(t=>rT.add(new Option(t,t)));
   } else if (tab==='jef') {
-    [...new Set((DATA.jefatura||[]).map(r=>r.cuenta).filter(Boolean))].sort()
-      .forEach(c=>rCuenta.add(new Option('Cta. '+c, c)));
-    rC.style.display='none'; rT.style.display='none'; rCr.style.display='none'; rCuenta.style.display='';
-  } else {
-    rC.style.display='none'; rT.style.display='none'; rCr.style.display='none'; rCuenta.style.display='none';
+    const rCuenta=document.getElementById('r-cuenta');
+    const rAna=document.getElementById('r-analista');
+    const rPP=document.getElementById('r-pp');
+    const rTipo=document.getElementById('r-tipo-jef');
+    const rMon=document.getElementById('r-moneda');
+    rCuenta.innerHTML='<option value="">Todas las cuentas</option>';
+    rAna.innerHTML='<option value="">Todos los analistas</option>';
+    rPP.innerHTML='<option value="">Todos los PP</option>';
+    rTipo.innerHTML='<option value="">Todos los tipos</option>';
+    rMon.innerHTML='<option value="">Todas las monedas</option>';
+    [...new Set(jef.map(r=>r.cuenta).filter(Boolean))].sort()
+      .forEach(c=>rCuenta.add(new Option('CC '+c,c)));
+    [...new Set(jef.map(r=>r.analista).filter(Boolean))].sort()
+      .forEach(a=>rAna.add(new Option(a,a)));
+    [...new Set(jef.map(r=>r.pp).filter(Boolean))].sort()
+      .forEach(p=>rPP.add(new Option(p,p)));
+    [...new Set(jef.map(r=>r.tipo_pago).filter(Boolean))].sort()
+      .forEach(t=>rTipo.add(new Option(t,t)));
+    [...new Set(jef.map(r=>r.moneda).filter(Boolean))].sort()
+      .forEach(m=>rMon.add(new Option(m,m)));
   }
-  document.getElementById('r-estado').style.display=(tab==='lm'||tab==='jef')?'none':'';
-  // Filtros de fecha: solo visibles en pestaña Jefatura
-  document.getElementById('jef-date-filters').style.display=(tab==='jef')?'flex':'none';
-  if (tab!=='jef') {
-    document.getElementById('r-desde').value='';
-    document.getElementById('r-hasta').value='';
+
+  // Fila 2: monto + fechas
+  const row2=document.getElementById('tb-row2');
+  const grpFecha=document.getElementById('grp-fecha');
+  const lblFecha=document.getElementById('lbl-fecha');
+  const sepFecha=document.getElementById('sep-fecha');
+  // Monto visible en banco/lm/jef, no en noc
+  row2.style.display=(tab!=='noc')?'flex':'none';
+  // Fecha visible en banco/lm/jef
+  const hasFecha = tab!=='noc';
+  grpFecha.style.display=hasFecha?'flex':'none';
+  sepFecha.style.display=hasFecha?'block':'none';
+  if(lblFecha){
+    lblFecha.style.display=hasFecha?'inline':'none';
+    lblFecha.textContent=tab==='jef'?'Fecha pago:':'Fecha:';
   }
+  // Reset fechas y montos al cambiar tab
+  document.getElementById('r-desde').value='';
+  document.getElementById('r-hasta').value='';
+  document.getElementById('r-monto-min').value='';
+  document.getElementById('r-monto-max').value='';
+  document.getElementById('r-search').value='';
+
   applyFilters(); renderTable();
 }
 
 function onSearch(){currentPage=1;applyFilters();renderTable()}
 function onFilter(){currentPage=1;applyFilters();renderTable()}
 
+function gv(id){ return (document.getElementById(id)||{}).value||''; }
+
+// Normalizar cualquier fecha a YYYY-MM-DD para comparar
+function normFecha(s) {
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const p=s.split('/');
+    return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(s)) {
+    const p=s.split('-');
+    return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  return String(s).slice(0,10);
+}
+
 function applyFilters() {
-  const q  =document.getElementById('r-search').value.toLowerCase().trim();
-  const fE =document.getElementById('r-estado').value;
-  const fT =document.getElementById('r-tipo').value;
-  const fC =document.getElementById('r-cartola').value;
-  const fCr=document.getElementById('r-criterio').value;
-  const fCuenta=document.getElementById('r-cuenta').value;
+  const q        = gv('r-search').toLowerCase().trim();
+  const fDesde   = gv('r-desde');
+  const fHasta   = gv('r-hasta');
+  const montoMin = parseFloat(gv('r-monto-min'))||0;
+  const montoMax = parseFloat(gv('r-monto-max'))||Infinity;
+
   let src;
   if (currentTab==='banco') src=DATA.banco;
   else if (currentTab==='lm') src=DATA.lm;
@@ -1177,45 +1305,103 @@ function applyFilters() {
     ...DATA.banco.filter(r=>r.estado==='NO CONCILIADO').map(r=>({...r,_src:'banco'})),
     ...DATA.lm.filter(r=>!r.conciliado).map(r=>({...r,_src:'lm'}))
   ];
+
   filtered=src.filter(r=>{
+    // ── Búsqueda texto (todos los tabs) ──
     if (q){
-      const hay=[r.descripcion||'',r.glosa||'',r.comprobante_lm||'',r.docto||'',r.rut||'',
-        String(r.rut_extraido||''),String(r.folio||''),String(r.folio_lm||''),
+      const hay=[r.descripcion||'',r.glosa||'',r.comprobante_lm||'',r.docto||'',
+        r.rut||'',String(r.rut_extraido||''),String(r.folio||''),String(r.folio_lm||''),
         String(r.monto||r.debe||r.haber||''),String(r.cartola||''),
-        r.ted||'',r.nomina||'',r.tipo_pago||'',r.analista||'',r.cuenta||''].join(' ').toLowerCase();
+        r.ted||'',r.nomina||'',r.tipo_pago||'',r.analista||'',r.cuenta||'',
+        r.tipo||'',r.pp||'',r.moneda||'',r.centro_costo||'',r.observacion||''
+      ].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (fE&&r.estado!==undefined&&r.estado!==fE) return false;
-    if (fT&&r.tipo!==fT) return false;
-    if (fC&&r.cartola!==undefined&&String(r.cartola)!==fC) return false;
-    if (fCr&&r.criterio!==fCr) return false;
-    if (fCuenta&&r.cuenta!==undefined&&r.cuenta!==fCuenta) return false;
-    // Filtro fechas (solo Jefatura — usa fecha_pago)
-    if (currentTab==='jef') {
-      const fDesde = document.getElementById('r-desde').value;
-      const fHasta = document.getElementById('r-hasta').value;
-      if (fDesde || fHasta) {
-        // Normalizar fecha_pago a YYYY-MM-DD para comparar lexicográficamente
-        let fp = r.fecha_pago || '';
-        // Soportar formato dd/mm/yyyy (toLocaleDateString chileno) y yyyy-mm-dd
-        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fp)) {
-          const p = fp.split('/');
-          fp = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
-        }
-        if (fDesde && fp < fDesde) return false;
-        if (fHasta && fp > fHasta) return false;
+
+    // ── Rango de monto ──
+    const mval = r.monto || Math.max(r.debe||0, r.haber||0) || 0;
+    if (montoMin>0 && mval < montoMin) return false;
+    if (montoMax<Infinity && mval > montoMax) return false;
+
+    // ── BANCO ──
+    if (currentTab==='banco') {
+      const fE=gv('r-estado'); if(fE&&r.estado!==fE) return false;
+      const fCr=gv('r-criterio'); if(fCr&&r.criterio!==fCr) return false;
+      const fC=gv('r-cartola'); if(fC&&String(r.cartola)!==fC) return false;
+      const fT=gv('r-tipo-banco'); if(fT&&r.tipo!==fT) return false;
+      if (fDesde||fHasta){
+        const fd=normFecha(r.fecha);
+        if(fDesde&&fd<fDesde) return false;
+        if(fHasta&&fd>fHasta) return false;
       }
+      return true;
     }
+
+    // ── LIBRO MAYOR ──
+    if (currentTab==='lm') {
+      const fT=gv('r-tipo-lm'); if(fT&&r.tipo!==fT) return false;
+      const fConc=gv('r-conciliado-lm');
+      if(fConc==='1'&&!r.conciliado) return false;
+      if(fConc==='0'&&r.conciliado) return false;
+      if (fDesde||fHasta){
+        const fd=normFecha(r.fecha);
+        if(fDesde&&fd<fDesde) return false;
+        if(fHasta&&fd>fHasta) return false;
+      }
+      return true;
+    }
+
+    // ── JEFATURA ──
+    if (currentTab==='jef') {
+      const fCuenta=gv('r-cuenta'); if(fCuenta&&r.cuenta!==fCuenta) return false;
+      const fEst=gv('r-estado-jef'); if(fEst&&r.estado_jef!==fEst) return false;
+      const fAna=gv('r-analista'); if(fAna&&r.analista!==fAna) return false;
+      const fPP=gv('r-pp'); if(fPP&&r.pp!==fPP) return false;
+      const fTipo=gv('r-tipo-jef'); if(fTipo&&r.tipo_pago!==fTipo) return false;
+      const fMon=gv('r-moneda'); if(fMon&&r.moneda!==fMon) return false;
+      if (fDesde||fHasta){
+        const fd=normFecha(r.fecha_pago);
+        if(fDesde&&fd<fDesde) return false;
+        if(fHasta&&fd>fHasta) return false;
+      }
+      return true;
+    }
+
+    // ── NO CONCILIADOS ──
+    const fFuente=gv('r-fuente');
+    if(fFuente&&r._src!==fFuente) return false;
     return true;
   });
-  document.getElementById('r-count').textContent=filtered.length+' registros';
+
+  // Mostrar activos en contador
+  const activos=Object.values({
+    banco:[gv('r-estado'),gv('r-criterio'),gv('r-cartola'),gv('r-tipo-banco')],
+    lm:[gv('r-tipo-lm'),gv('r-conciliado-lm')],
+    jef:[gv('r-cuenta'),gv('r-estado-jef'),gv('r-analista'),gv('r-pp'),gv('r-tipo-jef'),gv('r-moneda')],
+    noc:[gv('r-fuente')]
+  }[currentTab]||[]).filter(Boolean).length
+    + (gv('r-desde')||gv('r-hasta')?1:0)
+    + (montoMin>0||montoMax<Infinity?1:0)
+    + (q?1:0);
+
+  const cnt=document.getElementById('r-count');
+  if(cnt) cnt.innerHTML=`<strong>${filtered.length}</strong> registros`
+    +(activos>0?` <span style="color:var(--blue);font-size:10px">(${activos} filtro${activos>1?'s':''})</span>`:'');
 }
 
-function clearJefDates() {
+function resetFilters() {
+  ['r-search','r-estado','r-criterio','r-cartola','r-tipo-banco','r-tipo-lm',
+   'r-conciliado-lm','r-cuenta','r-estado-jef','r-analista','r-pp','r-tipo-jef',
+   'r-moneda','r-fuente','r-desde','r-hasta','r-monto-min','r-monto-max'
+  ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  onFilter();
+}
+function clearDates() {
   document.getElementById('r-desde').value='';
   document.getElementById('r-hasta').value='';
   onFilter();
 }
+function clearJefDates(){ clearDates(); }
 
 // ── RENDER ──
 function renderTable() {

@@ -355,6 +355,20 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 .btn-conciliar{padding:4px 10px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap}
 .btn-conciliar:hover{background:#dbeafe;border-color:#93c5fd;transform:translateY(-1px);box-shadow:0 2px 6px rgba(37,99,235,.2)}
 
+/* ── BOTÓN GIRADO Y NO COBRADO ── */
+.btn-gnc{padding:4px 10px;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;border-radius:6px;font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-gnc:hover{background:#fef3c7;border-color:#f59e0b;transform:translateY(-1px);box-shadow:0 2px 6px rgba(245,158,11,.25)}
+
+/* ── BOTÓN REVERTIR GNC ── */
+.btn-revertir{padding:4px 10px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;border-radius:6px;font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-revertir:hover{background:#e2e8f0;border-color:#94a3b8}
+
+/* ── PILL GIRADO Y NO COBRADO ── */
+.pill.gnc{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+
+/* ── BOTONES EN COLUMNA DE ACCIÓN (vertical) ── */
+.acciones-col{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+
 /* ── MODAL CONCILIAR MANUAL ── */
 .conciliar-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease}
 .conciliar-modal-box{background:white;border-radius:14px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden;animation:slideUp .18s ease}
@@ -547,6 +561,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
       <div class="tab active" onclick="switchTab('banco')">Cartola Banco <span class="badge" id="b-cnt-banco">0</span></div>
       <div class="tab" onclick="switchTab('lm')">Libro Mayor <span class="badge" id="b-cnt-lm">0</span></div>
       <div class="tab" onclick="switchTab('noc')">No Conciliados <span class="badge red" id="b-cnt-noc">0</span></div>
+      <div class="tab" onclick="switchTab('gnc')">Girados y No Cobrados <span class="badge" id="b-cnt-gnc" style="background:rgba(245,158,11,.25);color:#fcd34d">0</span></div>
       <div class="tab" id="tab-jef" style="display:none" onclick="switchTab('jef')">Base Jefatura <span class="badge" id="b-cnt-jef">0</span></div>
     </div>
   </div>
@@ -605,6 +620,13 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 
         <!-- NOC: fuente -->
         <select id="r-fuente" onchange="onFilter()" class="tb-hidden">
+          <option value="">Banco + LM</option>
+          <option value="banco">Solo Banco</option>
+          <option value="lm">Solo LM</option>
+        </select>
+
+        <!-- GNC: fuente -->
+        <select id="r-fuente-gnc" onchange="onFilter()" class="tb-hidden">
           <option value="">Banco + LM</option>
           <option value="banco">Solo Banco</option>
           <option value="lm">Solo LM</option>
@@ -1140,6 +1162,8 @@ function showResults() {
   // Indexar filas para poder editarlas por referencia
   DATA.banco.forEach((r,i) => r._idx = i);
   DATA.lm.forEach((r,i) => r._idx = i);
+  // Inicializar lista de Girados y No Cobrados (vacía al inicio)
+  if (!DATA.gnc) DATA.gnc = [];
   const s = DATA.summary;
   const pct = (s.conciliados/s.total*100).toFixed(1);
   document.getElementById('topbar-sub').textContent = `ANID · ${files.banco.name} + ${files.lm.name}`;
@@ -1154,6 +1178,10 @@ function showResults() {
   document.getElementById('b-cnt-banco').textContent = s.total;
   document.getElementById('b-cnt-lm').textContent = s.lm_total;
   document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados;
+  document.getElementById('b-cnt-gnc').textContent = '0';
+  // Inicializar campos de summary si no existen
+  if (s.gnc_total == null) s.gnc_total = 0;
+  if (s.gnc_monto_total == null) s.gnc_monto_total = 0;
   // Jefatura tab
   const tabJef = document.getElementById('tab-jef');
   if (DATA.jefatura) {
@@ -1187,14 +1215,15 @@ const TAB_SHOW = {
   lm:    ['r-tipo-lm','r-conciliado-lm'],
   jef:   ['r-cuenta','r-estado-jef','r-analista','r-pp','r-tipo-jef','r-moneda'],
   noc:   ['r-fuente'],
+  gnc:   ['r-fuente-gnc'],
 };
 const ALL_TAB_CONTROLS = ['r-estado','r-criterio','r-cartola','r-tipo-banco',
   'r-tipo-lm','r-conciliado-lm','r-cuenta','r-estado-jef','r-analista',
-  'r-pp','r-tipo-jef','r-moneda','r-fuente'];
+  'r-pp','r-tipo-jef','r-moneda','r-fuente','r-fuente-gnc'];
 
 function switchTab(tab) {
   currentTab=tab; currentPage=1;
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['banco','lm','noc','jef'][i]===tab));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['banco','lm','noc','gnc','jef'][i]===tab));
 
   // Ocultar todos los controles específicos de tab
   ALL_TAB_CONTROLS.forEach(id=>{
@@ -1250,9 +1279,9 @@ function switchTab(tab) {
   const grpFecha=document.getElementById('grp-fecha');
   const lblFecha=document.getElementById('lbl-fecha');
   const sepFecha=document.getElementById('sep-fecha');
-  // Monto visible en banco/lm/jef, no en noc
+  // Monto visible en banco/lm/jef/gnc, no en noc
   row2.style.display=(tab!=='noc')?'flex':'none';
-  // Fecha visible en banco/lm/jef
+  // Fecha visible en banco/lm/jef/gnc
   const hasFecha = tab!=='noc';
   grpFecha.style.display=hasFecha?'flex':'none';
   sepFecha.style.display=hasFecha?'block':'none';
@@ -1267,6 +1296,8 @@ function switchTab(tab) {
   document.getElementById('r-monto-max').value='';
   document.getElementById('r-search').value='';
 
+  // Refrescar tarjetas resumen para que muestren las correctas según el tab
+  if (typeof updateSummaryCards === 'function') updateSummaryCards();
   applyFilters(); renderTable();
 }
 
@@ -1301,9 +1332,10 @@ function applyFilters() {
   if (currentTab==='banco') src=DATA.banco;
   else if (currentTab==='lm') src=DATA.lm;
   else if (currentTab==='jef') src=DATA.jefatura||[];
+  else if (currentTab==='gnc') src=(DATA.gnc||[]);
   else src=[
     ...DATA.banco.filter(r=>r.estado==='NO CONCILIADO').map(r=>({...r,_src:'banco'})),
-    ...DATA.lm.filter(r=>!r.conciliado).map(r=>({...r,_src:'lm'}))
+    ...DATA.lm.filter(r=>!r.conciliado&&!r.gnc).map(r=>({...r,_src:'lm'}))
   ];
 
   filtered=src.filter(r=>{
@@ -1367,6 +1399,17 @@ function applyFilters() {
       return true;
     }
 
+    // ── GIRADOS Y NO COBRADOS ──
+    if (currentTab==='gnc') {
+      const fF=gv('r-fuente-gnc'); if(fF&&r._src!==fF) return false;
+      if (fDesde||fHasta){
+        const fd=normFecha(r.fecha);
+        if(fDesde&&fd<fDesde) return false;
+        if(fHasta&&fd>fHasta) return false;
+      }
+      return true;
+    }
+
     // ── NO CONCILIADOS ──
     const fFuente=gv('r-fuente');
     if(fFuente&&r._src!==fFuente) return false;
@@ -1378,7 +1421,8 @@ function applyFilters() {
     banco:[gv('r-estado'),gv('r-criterio'),gv('r-cartola'),gv('r-tipo-banco')],
     lm:[gv('r-tipo-lm'),gv('r-conciliado-lm')],
     jef:[gv('r-cuenta'),gv('r-estado-jef'),gv('r-analista'),gv('r-pp'),gv('r-tipo-jef'),gv('r-moneda')],
-    noc:[gv('r-fuente')]
+    noc:[gv('r-fuente')],
+    gnc:[gv('r-fuente-gnc')]
   }[currentTab]||[]).filter(Boolean).length
     + (gv('r-desde')||gv('r-hasta')?1:0)
     + (montoMin>0||montoMax<Infinity?1:0)
@@ -1392,7 +1436,7 @@ function applyFilters() {
 function resetFilters() {
   ['r-search','r-estado','r-criterio','r-cartola','r-tipo-banco','r-tipo-lm',
    'r-conciliado-lm','r-cuenta','r-estado-jef','r-analista','r-pp','r-tipo-jef',
-   'r-moneda','r-fuente','r-desde','r-hasta','r-monto-min','r-monto-max'
+   'r-moneda','r-fuente','r-fuente-gnc','r-desde','r-hasta','r-monto-min','r-monto-max'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   onFilter();
 }
@@ -1484,6 +1528,30 @@ function renderTable() {
       </tr>`;
     }).join(''):'<tr><td colspan="15" class="empty">Sin datos de jefatura</td></tr>';
 
+  } else if (currentTab==='gnc') {
+    // ── GIRADOS Y NO COBRADOS ──
+    thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th>RUT / Folio</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th>Marcado</th><th>Acción</th></tr>`;
+    tbody.innerHTML=rows.length?rows.map((r,i)=>{
+      const isBanco=r._src==='banco';
+      const monto=r._gnc_monto!=null?r._gnc_monto:(isBanco?r.monto:(r.debe>0?r.debe:r.haber));
+      const desc=isBanco?r.descripcion:r.glosa;
+      const ref=isBanco?(r.comprobante_lm||'—'):(r.docto||'—');
+      const rutFolio=isBanco?(r.rut_extraido||'—'):(r.folio!=null?'Folio '+r.folio:(r.rut||'—'));
+      const fechaMarc=r._gnc_fecha||'—';
+      return `<tr class="no-conciliado">
+        <td class="mono" style="color:var(--g4);font-size:10px">${start+i+1}</td>
+        <td>${isBanco?'<span class="pill banco-src">Banco</span>':'<span class="pill lm-src">Libro Mayor</span>'}</td>
+        <td class="mono" style="font-size:11px">${r.fecha||'—'}</td>
+        <td>${isBanco?(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>'):tipoPill(r.tipo)}</td>
+        <td title="${esc(desc)}">${esc(desc)}</td>
+        <td class="mono" style="font-size:11px;color:var(--g5)">${rutFolio}</td>
+        <td class="amount" style="color:var(--amber);font-weight:700">$${fmtNum(monto)}</td>
+        <td class="mono" style="font-size:11px">${ref}</td>
+        <td class="mono" style="font-size:10px;color:var(--g5)">${fechaMarc}</td>
+        <td><button class="btn-revertir" onclick="revertirGNC(${r._gnc_idx})" title="Quitar de Girados y No Cobrados">↺ Revertir</button></td>
+      </tr>`;
+    }).join(''):'<tr><td colspan="10" class="empty">No hay movimientos marcados como Girados y No Cobrados</td></tr>';
+
   } else {
     thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th>Acción</th></tr>`;
     tbody.innerHTML=rows.length?rows.map((r,i)=>{
@@ -1491,9 +1559,10 @@ function renderTable() {
       const monto=isBanco?r.monto:(r.debe>0?r.debe:r.haber);
       const desc=isBanco?r.descripcion:r.glosa;
       const ref=isBanco?(r.comprobante_lm||'—'):r.docto;
-      const accion=isBanco
-        ?`<button class="btn-conciliar" onclick="openConciliarModal(${r._idx})">🔗 Conciliar</button>`
-        :`<span style="font-size:10px;color:var(--g4)">—</span>`;
+      const accion=`<div class="acciones-col">
+        <button class="btn-conciliar" onclick="openConciliarModal(${r._idx},'${r._src}')">🔗 Conciliar</button>
+        <button class="btn-gnc" onclick="marcarGNC(${r._idx},'${r._src}')" title="Marcar como Girado y No Cobrado">📤 Girado y no cobrado</button>
+      </div>`;
       return `<tr class="no-conciliado">
         <td class="mono" style="color:var(--g4);font-size:10px">${start+i+1}</td>
         <td>${isBanco?'<span class="pill banco-src">Banco</span>':'<span class="pill lm-src">Libro Mayor</span>'}</td>
@@ -1619,23 +1688,38 @@ function recalcSummary() {
   s.por_rut_monto   = DATA.banco.filter(r=>r.criterio==='RUT+Monto').length;
   s.por_monto       = DATA.banco.filter(r=>r.criterio==='Solo Monto').length;
   s.lm_conciliados  = DATA.lm.filter(r=>r.conciliado).length;
-  s.lm_no_conciliados = DATA.lm.filter(r=>!r.conciliado).length;
+  s.lm_no_conciliados = DATA.lm.filter(r=>!r.conciliado && !r.gnc).length;
+  s.gnc_total       = (DATA.gnc||[]).length;
+  s.gnc_monto_total = (DATA.gnc||[]).reduce((a,g)=>a+(g._gnc_monto||0),0);
 }
 
 function updateSummaryCards() {
   const s = DATA.summary;
   const pct = (s.conciliados/s.total*100).toFixed(1);
-  document.getElementById('r-cards').innerHTML = [
+  // Tarjetas: banco/lm + GNC si existen
+  const baseCards = [
     { label:'Conciliados', val:`${s.conciliados}/${s.total}`, sub:pct+'% del total', cls:'green' },
-    { label:'No Conciliados', val:s.no_conciliados, sub:'banco + LM', cls:'amber' },
+    { label:'No Conciliados', val:s.no_conciliados+s.lm_no_conciliados, sub:'banco + LM', cls:'amber' },
     { label:'Por RUT+Monto', val:s.por_rut_monto, sub:'exacto', cls:'green' },
     { label:'Solo por Monto', val:s.por_monto, sub:'sin RUT en banco', cls:'blue' },
     { label:'Total Abonos', val:'$'+(s.total_abonos/1e9).toFixed(2)+'B', sub:fmtNum(s.total_abonos), cls:'blue' },
     { label:'Total Cargos', val:'$'+(s.total_cargos/1e9).toFixed(2)+'B', sub:fmtNum(s.total_cargos), cls:'blue' },
-  ].map(c=>`<div class="card ${c.cls}"><div class="card-label">${c.label}</div><div class="card-value">${c.val}</div><div class="card-sub">${c.sub}</div></div>`).join('');
+  ];
+  // Si hay GNC, mostrar tarjeta especial en pestaña GNC
+  if (currentTab==='gnc' && (s.gnc_total||0) > 0) {
+    document.getElementById('r-cards').innerHTML = [
+      { label:'Total Girados y No Cobrados', val:s.gnc_total, sub:'movimientos marcados', cls:'amber' },
+      { label:'Monto Total GNC', val:'$'+fmtNum(s.gnc_monto_total||0), sub:'suma de montos', cls:'amber' },
+      { label:'Desde Banco', val:(DATA.gnc||[]).filter(g=>g._src==='banco').length, sub:'movimientos banco', cls:'blue' },
+      { label:'Desde Libro Mayor', val:(DATA.gnc||[]).filter(g=>g._src==='lm').length, sub:'registros LM', cls:'blue' },
+    ].map(c=>`<div class="card ${c.cls}"><div class="card-label">${c.label}</div><div class="card-value">${c.val}</div><div class="card-sub">${c.sub}</div></div>`).join('');
+  } else {
+    document.getElementById('r-cards').innerHTML = baseCards.map(c=>`<div class="card ${c.cls}"><div class="card-label">${c.label}</div><div class="card-value">${c.val}</div><div class="card-sub">${c.sub}</div></div>`).join('');
+  }
   document.getElementById('b-cnt-banco').textContent = s.total;
   document.getElementById('b-cnt-lm').textContent = s.lm_total;
   document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados;
+  document.getElementById('b-cnt-gnc').textContent = s.gnc_total||0;
 }
 
 // Cerrar dropdown al hacer click fuera
@@ -1651,7 +1735,7 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════════
 function showMontosModal() {
   const bancNoc = DATA.banco.filter(r => r.estado === 'NO CONCILIADO');
-  const lmNoc   = DATA.lm.filter(r => !r.conciliado);
+  const lmNoc   = DATA.lm.filter(r => !r.conciliado && !r.gnc);
 
   // Agrupar por monto en cada fuente
   const bancByMonto = {};
@@ -1766,30 +1850,57 @@ function closeMontosModal() {
 }
 
 // ══════════════════════════════════════════════
-// MODAL — CONCILIAR MANUAL (NOC → LM)
+// MODAL — CONCILIAR MANUAL (bidireccional: Banco↔LM)
 // ══════════════════════════════════════════════
-let _conciliarBancoIdx = null;
-let _cmLMRows = []; // filas LM filtradas actuales
-let _cmSelectedLm = new Set(); // índices LM seleccionados para conciliar múltiple
+let _conciliarBancoIdx = null;   // se mantiene por retrocompatibilidad: idx del registro origen
+let _conciliarSrc = 'banco';      // 'banco' = Banco→LM (default), 'lm' = LM→Banco
+let _cmLMRows = []; // filas del lado destino filtradas (LM si src=banco, banco si src=lm)
+let _cmSelectedLm = new Set(); // índices del destino seleccionados para conciliar múltiple
 
-function openConciliarModal(bancoIdx) {
-  _conciliarBancoIdx = bancoIdx;
-  const br = DATA.banco[bancoIdx];
-  const esMonto = br.monto;
+function openConciliarModal(idx, src) {
+  // Compatibilidad: si no se pasa src, asumir 'banco' (comportamiento original)
+  _conciliarSrc = src || 'banco';
+  _conciliarBancoIdx = idx;
 
-  // Header meta
-  document.getElementById('cm-subtitle').textContent =
-    `Banco · ${br.fecha} · ${br.tipo_code==='A'?'Abono':'Cargo'}`;
-  document.getElementById('cm-meta').innerHTML = `
-    <div class="conciliar-meta-item">
-      <div class="cm-lbl">Monto</div>
-      <div class="cm-val">$${fmtNum(esMonto)}</div>
-    </div>
-    <div class="conciliar-meta-item">
-      <div class="cm-lbl">Descripción</div>
-      <div class="cm-val" style="font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;font-family:var(--font)">${esc((br.descripcion||'').slice(0,70))}</div>
-    </div>
-    ${br.rut_extraido ? `<div class="conciliar-meta-item"><div class="cm-lbl">RUT Banco</div><div class="cm-val">${br.rut_extraido}</div></div>` : ''}`;
+  if (_conciliarSrc === 'banco') {
+    // ── BANCO → LM ──
+    const br = DATA.banco[idx];
+    const esMonto = br.monto;
+    document.querySelector('#conciliar-modal h2').textContent = '🔗 Seleccionar registro del Libro Mayor para comprobar';
+    document.getElementById('cm-section-label').textContent = 'Registros LM no conciliados';
+    document.getElementById('cm-subtitle').textContent =
+      `Banco · ${br.fecha} · ${br.tipo_code==='A'?'Abono':'Cargo'}`;
+    document.getElementById('cm-meta').innerHTML = `
+      <div class="conciliar-meta-item">
+        <div class="cm-lbl">Monto</div>
+        <div class="cm-val">$${fmtNum(esMonto)}</div>
+      </div>
+      <div class="conciliar-meta-item">
+        <div class="cm-lbl">Descripción</div>
+        <div class="cm-val" style="font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;font-family:var(--font)">${esc((br.descripcion||'').slice(0,70))}</div>
+      </div>
+      ${br.rut_extraido ? `<div class="conciliar-meta-item"><div class="cm-lbl">RUT Banco</div><div class="cm-val">${br.rut_extraido}</div></div>` : ''}`;
+  } else {
+    // ── LM → BANCO ──
+    const lr = DATA.lm[idx];
+    const monto = lr.debe>0 ? lr.debe : lr.haber;
+    const tipoLabel = lr.debe>0 ? 'Debe' : 'Haber';
+    document.querySelector('#conciliar-modal h2').textContent = '🔗 Seleccionar movimiento del Banco para comprobar';
+    document.getElementById('cm-section-label').textContent = 'Movimientos de Banco no conciliados';
+    document.getElementById('cm-subtitle').textContent =
+      `Libro Mayor · ${lr.fecha} · ${lr.tipo||'—'}`;
+    document.getElementById('cm-meta').innerHTML = `
+      <div class="conciliar-meta-item">
+        <div class="cm-lbl">${tipoLabel}</div>
+        <div class="cm-val">$${fmtNum(monto)}</div>
+      </div>
+      <div class="conciliar-meta-item">
+        <div class="cm-lbl">Glosa</div>
+        <div class="cm-val" style="font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;font-family:var(--font)">${esc((lr.glosa||'').slice(0,70))}</div>
+      </div>
+      ${lr.rut ? `<div class="conciliar-meta-item"><div class="cm-lbl">RUT LM</div><div class="cm-val">${lr.rut}</div></div>` : ''}
+      ${lr.folio!=null ? `<div class="conciliar-meta-item"><div class="cm-lbl">Folio</div><div class="cm-val">${lr.folio}</div></div>` : ''}`;
+  }
 
   // Reset selección múltiple
   _cmSelectedLm = new Set();
@@ -1807,44 +1918,114 @@ function openConciliarModal(bancoIdx) {
 
 function filterConciliarLM() {
   if (_conciliarBancoIdx === null) return;
-  const br = DATA.banco[_conciliarBancoIdx];
   const q  = document.getElementById('cm-search').value.toLowerCase().trim();
   const ft = document.getElementById('cm-tipo').value;
 
-  // Tomar todas las filas LM no conciliadas
-  let rows = DATA.lm.filter(r => !r.conciliado);
-  if (ft) rows = rows.filter(r => r.tipo === ft);
-  if (q)  rows = rows.filter(r => {
-    const hay = [r.glosa||'', r.rut||'', String(r.folio||''), r.docto||'',
-                 String(r.debe||''), String(r.haber||''), r.tipo||''].join(' ').toLowerCase();
-    return hay.includes(q);
-  });
-
-  // Ordenar: exacto por monto primero, luego RUT match, resto
-  rows.sort((a, b) => {
-    const aM = (a.debe===br.monto||a.haber===br.monto) ? 0 : 1;
-    const bM = (b.debe===br.monto||b.haber===br.monto) ? 0 : 1;
-    if (aM !== bM) return aM - bM;
-    // Secundario: RUT match
-    const aR = br.rut_extraido && (a.rut_num===br.rut_extraido) ? 0 : 1;
-    const bR = br.rut_extraido && (b.rut_num===br.rut_extraido) ? 0 : 1;
-    return aR - bR;
-  });
-
-  _cmLMRows = rows;
-  renderConciliarLMTable(br);
+  if (_conciliarSrc === 'banco') {
+    // ── BANCO → LM ──
+    const br = DATA.banco[_conciliarBancoIdx];
+    let rows = DATA.lm.filter(r => !r.conciliado && !r.gnc);
+    if (ft) rows = rows.filter(r => r.tipo === ft);
+    if (q)  rows = rows.filter(r => {
+      const hay = [r.glosa||'', r.rut||'', String(r.folio||''), r.docto||'',
+                   String(r.debe||''), String(r.haber||''), r.tipo||''].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    // Ordenar: exacto por monto primero, luego RUT match, resto
+    rows.sort((a, b) => {
+      const aM = (a.debe===br.monto||a.haber===br.monto) ? 0 : 1;
+      const bM = (b.debe===br.monto||b.haber===br.monto) ? 0 : 1;
+      if (aM !== bM) return aM - bM;
+      const aR = br.rut_extraido && (a.rut_num===br.rut_extraido) ? 0 : 1;
+      const bR = br.rut_extraido && (b.rut_num===br.rut_extraido) ? 0 : 1;
+      return aR - bR;
+    });
+    _cmLMRows = rows;
+    renderConciliarLMTable(br);
+  } else {
+    // ── LM → BANCO ──
+    const lr = DATA.lm[_conciliarBancoIdx];
+    const lrMonto = lr.debe>0 ? lr.debe : lr.haber;
+    let rows = DATA.banco.filter(r => r.estado === 'NO CONCILIADO');
+    // Filtrar por tipo (Abono/Cargo) usando el select de tipo: mapeamos
+    if (ft) {
+      // Si el filtro es 'Ingreso' → mostrar Abonos, 'Egreso' → Cargos
+      const map = { Ingreso:'A', Egreso:'C' };
+      const tcWanted = map[ft];
+      if (tcWanted) rows = rows.filter(r => r.tipo_code === tcWanted);
+    }
+    if (q) rows = rows.filter(r => {
+      const hay = [r.descripcion||'', String(r.rut_extraido||''), String(r.monto||''),
+                   String(r.cartola||''), r.tipo||''].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    // Ordenar: monto exacto primero, luego RUT match, resto
+    rows.sort((a, b) => {
+      const aM = (a.monto===lrMonto) ? 0 : 1;
+      const bM = (b.monto===lrMonto) ? 0 : 1;
+      if (aM !== bM) return aM - bM;
+      const aR = lr.rut_num && (a.rut_extraido===lr.rut_num) ? 0 : 1;
+      const bR = lr.rut_num && (b.rut_extraido===lr.rut_num) ? 0 : 1;
+      return aR - bR;
+    });
+    _cmLMRows = rows;
+    renderConciliarLMTable(lr);
+  }
 }
 
-function renderConciliarLMTable(br) {
+function renderConciliarLMTable(srcRow) {
   const tbody = document.getElementById('cm-tbody');
   const hint  = document.getElementById('cm-count-hint');
+  const isLmSrc = _conciliarSrc === 'lm';
   hint.textContent = _cmLMRows.length + ' registro' + (_cmLMRows.length!==1?'s':'') + ' disponibles';
 
   if (!_cmLMRows.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="conciliar-empty">Sin registros LM no conciliados que coincidan con el filtro.</td></tr>`;
+    const msg = isLmSrc
+      ? 'Sin movimientos de Banco no conciliados que coincidan con el filtro.'
+      : 'Sin registros LM no conciliados que coincidan con el filtro.';
+    tbody.innerHTML = `<tr><td colspan="10" class="conciliar-empty">${msg}</td></tr>`;
     return;
   }
 
+  if (isLmSrc) {
+    // ── LM → BANCO: mostrar filas de banco ──
+    const lr = srcRow; // registro LM origen
+    const lrMonto = lr.debe>0 ? lr.debe : lr.haber;
+    tbody.innerHTML = _cmLMRows.map(r => {
+      const montoMatch = r.monto === lrMonto;
+      const rutMatch   = lr.rut_num && r.rut_extraido===lr.rut_num;
+      const matchTag   = montoMatch && rutMatch
+        ? '<span class="match-tag exact">🎯 RUT+Monto</span>'
+        : montoMatch
+          ? '<span class="match-tag exact">✓ Monto exacto</span>'
+          : '<span class="match-tag near">≈ Diferente</span>';
+      const isSel  = _cmSelectedLm.has(r._idx);
+      const rowCls = isSel ? 'cm-selected' : (montoMatch ? 'match-exact' : '');
+      const chkd   = isSel ? 'checked' : '';
+      const tipoPillBanco = r.tipo_code==='A'
+        ? '<span class="pill abono">▲ Abono</span>'
+        : '<span class="pill cargo">▼ Cargo</span>';
+      // Reutilizamos las mismas columnas (10) pero con datos del banco
+      return `<tr class="${rowCls}" onclick="toggleLMSelect(${r._idx})" style="cursor:pointer">
+        <td class="cm-checkbox-wrap" onclick="event.stopPropagation()">
+          <input type="checkbox" class="cm-chk" ${chkd} onchange="toggleLMSelect(${r._idx})">
+        </td>
+        <td class="mono" style="font-size:11px">${r.fecha}</td>
+        <td>${tipoPillBanco}</td>
+        <td>${r.cartola!=null?'<span class="folio-tag">C'+r.cartola+'</span>':'—'}</td>
+        <td class="mono" style="font-size:11px;color:var(--g5)">${r.rut_extraido||'—'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.descripcion)}">${esc(r.descripcion)}</td>
+        <td class="mono" style="font-size:11px">—</td>
+        <td class="amount pos">${r.tipo_code==='A'?fmtNum(r.monto):'—'}</td>
+        <td class="amount neg">${r.tipo_code==='C'?fmtNum(r.monto):'—'}</td>
+        <td>${matchTag}</td>
+      </tr>`;
+    }).join('');
+    return;
+  }
+
+  // ── BANCO → LM (default, comportamiento original) ──
+  const br = srcRow;
   tbody.innerHTML = _cmLMRows.map(r => {
     const montoMatch = r.debe===br.monto || r.haber===br.monto;
     const rutMatch   = br.rut_extraido && r.rut_num===br.rut_extraido;
@@ -1873,17 +2054,17 @@ function renderConciliarLMTable(br) {
   }).join('');
 }
 
-// Toggle selección de una fila LM
-function toggleLMSelect(lmIdx) {
-  if (_cmSelectedLm.has(lmIdx)) {
-    _cmSelectedLm.delete(lmIdx);
+// Toggle selección de una fila destino (puede ser LM o Banco según _conciliarSrc)
+function toggleLMSelect(targetIdx) {
+  if (_cmSelectedLm.has(targetIdx)) {
+    _cmSelectedLm.delete(targetIdx);
   } else {
-    _cmSelectedLm.add(lmIdx);
+    _cmSelectedLm.add(targetIdx);
   }
   updateCMTotals();
-  // Re-renderizar solo para actualizar checkboxes sin perder scroll
-  const br = DATA.banco[_conciliarBancoIdx];
-  renderConciliarLMTable(br);
+  // Re-renderizar para actualizar checkboxes sin perder scroll
+  const srcRow = _conciliarSrc==='banco' ? DATA.banco[_conciliarBancoIdx] : DATA.lm[_conciliarBancoIdx];
+  renderConciliarLMTable(srcRow);
 }
 
 // Seleccionar / deseleccionar todos los visibles
@@ -1893,21 +2074,37 @@ function toggleSelectAll(checked) {
     else _cmSelectedLm.delete(r._idx);
   });
   updateCMTotals();
-  const br = DATA.banco[_conciliarBancoIdx];
-  renderConciliarLMTable(br);
+  const srcRow = _conciliarSrc==='banco' ? DATA.banco[_conciliarBancoIdx] : DATA.lm[_conciliarBancoIdx];
+  renderConciliarLMTable(srcRow);
 }
 
 // Actualizar panel de totales
 function updateCMTotals() {
-  const br = _conciliarBancoIdx !== null ? DATA.banco[_conciliarBancoIdx] : null;
-  const montoBanco = br ? br.monto : 0;
-  let montoLM = 0;
-  _cmSelectedLm.forEach(idx => {
-    const lr = DATA.lm[idx];
-    if (lr) montoLM += (lr.debe > 0 ? lr.debe : lr.haber) || 0;
-  });
+  if (_conciliarBancoIdx === null) return;
+  const isLmSrc = _conciliarSrc === 'lm';
+  let montoOrigen = 0;
+  let montoDestino = 0;
+
+  if (isLmSrc) {
+    // Origen es LM, destino es Banco
+    const lr = DATA.lm[_conciliarBancoIdx];
+    montoOrigen = lr ? (lr.debe>0 ? lr.debe : lr.haber) : 0;
+    _cmSelectedLm.forEach(idx => {
+      const br = DATA.banco[idx];
+      if (br) montoDestino += br.monto || 0;
+    });
+  } else {
+    // Origen es Banco, destino es LM
+    const br = DATA.banco[_conciliarBancoIdx];
+    montoOrigen = br ? br.monto : 0;
+    _cmSelectedLm.forEach(idx => {
+      const lr = DATA.lm[idx];
+      if (lr) montoDestino += (lr.debe>0 ? lr.debe : lr.haber) || 0;
+    });
+  }
+
   const cnt = _cmSelectedLm.size;
-  const diff = montoLM - montoBanco;
+  const diff = montoDestino - montoOrigen;
 
   const bar = document.getElementById('cm-totals-bar');
   const btnConf = document.getElementById('cm-btn-confirmar');
@@ -1917,12 +2114,18 @@ function updateCMTotals() {
   if (btnConf) { btnConf.classList.toggle('visible', cnt > 0); }
   if (cntLabel) cntLabel.textContent = cnt;
 
+  // Actualizar etiquetas para reflejar la dirección
+  const lblBanco = document.querySelector('#cm-totals-bar .cm-tot-item:nth-child(1) .cm-tot-lbl');
+  const lblLM = document.querySelector('#cm-totals-bar .cm-tot-item:nth-child(2) .cm-tot-lbl');
+  if (lblBanco) lblBanco.textContent = isLmSrc ? 'Monto LM' : 'Monto banco';
+  if (lblLM)    lblLM.textContent    = isLmSrc ? 'Seleccionado Banco' : 'Seleccionado LM';
+
   const elBanco = document.getElementById('cm-tot-banco');
   const elLM    = document.getElementById('cm-tot-lm');
   const elDiff  = document.getElementById('cm-tot-diff');
   const elCnt   = document.getElementById('cm-tot-cnt');
-  if (elBanco) elBanco.textContent = '$' + fmtNum(montoBanco);
-  if (elLM)    elLM.textContent    = '$' + fmtNum(montoLM);
+  if (elBanco) elBanco.textContent = '$' + fmtNum(montoOrigen);
+  if (elLM)    elLM.textContent    = '$' + fmtNum(montoDestino);
   if (elDiff) {
     const absDiff = Math.abs(diff);
     elDiff.textContent = (diff === 0 ? '✓ Cuadra' : (diff > 0 ? '+' : '-') + '$' + fmtNum(absDiff));
@@ -1931,11 +2134,51 @@ function updateCMTotals() {
   if (elCnt) elCnt.textContent = cnt;
 }
 
-// Confirmar la conciliación con múltiples LM
+// Confirmar la conciliación con múltiples registros (bidireccional)
 function confirmarMultiConciliar() {
   if (_conciliarBancoIdx === null || _cmSelectedLm.size === 0) return;
-  const br = DATA.banco[_conciliarBancoIdx];
+  const isLmSrc = _conciliarSrc === 'lm';
 
+  if (isLmSrc) {
+    // ── LM → BANCO: 1 LM ↔ N Banco ──
+    const lr = DATA.lm[_conciliarBancoIdx];
+    const cartolas = [];
+    let lastTipo = '';
+    _cmSelectedLm.forEach(bIdx => {
+      const br = DATA.banco[bIdx];
+      if (!br) return;
+      const criterio = (lr.rut_num && br.rut_extraido === lr.rut_num) ? 'RUT+Monto' : 'Solo Monto';
+      br.estado = 'CONCILIADO';
+      br.folio_lm = lr.folio!=null ? String(lr.folio) : (br.folio_lm||null);
+      br.comprobante_lm = lr.docto || br.comprobante_lm || '';
+      br.tipo_comprobante = lr.tipo || '';
+      br.criterio = criterio;
+      lastTipo = lr.tipo || lastTipo;
+      if (br.cartola != null) cartolas.push('C' + br.cartola);
+    });
+    // Marcar el LM como conciliado
+    lr.conciliado = true;
+    // Determinar criterio agregado (si todos coinciden por RUT)
+    const allRutOk = Array.from(_cmSelectedLm).every(bIdx => {
+      const br = DATA.banco[bIdx];
+      return lr.rut_num && br && br.rut_extraido === lr.rut_num;
+    });
+    lr.criterio = allRutOk ? 'RUT+Monto' : 'Solo Monto';
+
+    const msg = _cmSelectedLm.size === 1
+      ? `✅ Conciliado · LM folio ${lr.folio||lr.docto||'—'} ↔ Banco`
+      : `✅ Conciliado · LM ↔ ${_cmSelectedLm.size} movimientos Banco`;
+    closeConciliarModal();
+    recalcSummary();
+    applyFilters();
+    renderTable();
+    updateSummaryCards();
+    showToast(msg);
+    return;
+  }
+
+  // ── BANCO → LM (comportamiento original) ──
+  const br = DATA.banco[_conciliarBancoIdx];
   const folios = [];
   const doctos = [];
   _cmSelectedLm.forEach(lmIdx => {
@@ -1969,10 +2212,86 @@ function confirmarMultiConciliar() {
 function closeConciliarModal() {
   document.getElementById('conciliar-modal').style.display = 'none';
   _conciliarBancoIdx = null;
+  _conciliarSrc = 'banco';
   _cmLMRows = [];
   _cmSelectedLm = new Set();
   const bar = document.getElementById('cm-totals-bar');
   if (bar) bar.style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// GIRADOS Y NO COBRADOS — marcar / revertir
+// ══════════════════════════════════════════════
+function marcarGNC(idx, src) {
+  if (!DATA.gnc) DATA.gnc = [];
+  // Evitar duplicados
+  const yaExiste = DATA.gnc.some(g => g._src===src && g._origIdx===idx);
+  if (yaExiste) {
+    showToast('⚠ Este registro ya está marcado como Girado y No Cobrado');
+    return;
+  }
+
+  const ahora = new Date().toLocaleDateString('es-CL');
+  let entry;
+  if (src === 'banco') {
+    const r = DATA.banco[idx];
+    entry = {
+      _src: 'banco', _origIdx: idx, _gnc_idx: DATA.gnc.length,
+      _gnc_monto: r.monto, _gnc_fecha: ahora,
+      fecha: r.fecha, descripcion: r.descripcion,
+      monto: r.monto, tipo: r.tipo, tipo_code: r.tipo_code,
+      cartola: r.cartola, rut_extraido: r.rut_extraido,
+      comprobante_lm: r.comprobante_lm, folio_lm: r.folio_lm,
+    };
+    // Marcar en banco
+    r.estado = 'GIRADO Y NO COBRADO';
+    r.criterio = '';
+  } else {
+    const r = DATA.lm[idx];
+    const monto = r.debe>0 ? r.debe : r.haber;
+    entry = {
+      _src: 'lm', _origIdx: idx, _gnc_idx: DATA.gnc.length,
+      _gnc_monto: monto, _gnc_fecha: ahora,
+      fecha: r.fecha, glosa: r.glosa,
+      debe: r.debe, haber: r.haber, tipo: r.tipo,
+      folio: r.folio, rut: r.rut, rut_num: r.rut_num,
+      docto: r.docto,
+    };
+    // Marcar en LM
+    r.gnc = true;
+  }
+  DATA.gnc.push(entry);
+
+  recalcSummary();
+  applyFilters();
+  renderTable();
+  updateSummaryCards();
+  showToast(`📤 Enviado a Girados y No Cobrados · $${fmtNum(entry._gnc_monto)}`);
+}
+
+function revertirGNC(gncIdx) {
+  if (!DATA.gnc) return;
+  const entry = DATA.gnc.find(g => g._gnc_idx === gncIdx);
+  if (!entry) return;
+
+  // Revertir el flag en el registro original
+  if (entry._src === 'banco') {
+    const r = DATA.banco[entry._origIdx];
+    if (r) r.estado = 'NO CONCILIADO';
+  } else {
+    const r = DATA.lm[entry._origIdx];
+    if (r) r.gnc = false;
+  }
+  // Quitar de la lista GNC
+  DATA.gnc = DATA.gnc.filter(g => g._gnc_idx !== gncIdx);
+  // Re-indexar para mantener consistencia
+  DATA.gnc.forEach((g, i) => g._gnc_idx = i);
+
+  recalcSummary();
+  applyFilters();
+  renderTable();
+  updateSummaryCards();
+  showToast('↺ Revertido a No Conciliado');
 }
 
 // Toast de confirmación
@@ -2216,7 +2535,51 @@ async function downloadExcel() {
   wsNoc.getColumn(7).hidden = true;
 
   // ─────────────────────────────────────────────
-  // HOJA 4: Base Jefatura (si existe)
+  // HOJA 4: Girados y No Cobrados (si existen)
+  // ─────────────────────────────────────────────
+  if (DATA.gnc && DATA.gnc.length > 0) {
+    const hG = ['#','Fuente','Fecha','Tipo','Descripción / Glosa','RUT / Folio','Monto ($)','Referencia','Marcado'];
+    const wG = [5, 13, 12, 18, 50, 16, 16, 18, 14];
+    const dG = DATA.gnc.map((r,i) => {
+      const isB = r._src === 'banco';
+      const tipoTxt = isB ? (r.tipo_code==='A'?'ABONO':'CARGO') : (r.tipo||'');
+      const desc = isB ? r.descripcion : r.glosa;
+      const rutFolio = isB ? (r.rut_extraido||'') : (r.folio!=null?'Folio '+r.folio:(r.rut||''));
+      const ref = isB ? (r.comprobante_lm||'') : (r.docto||'');
+      return [
+        i+1,
+        isB ? 'Banco' : 'Libro Mayor',
+        r.fecha || '',
+        tipoTxt,
+        desc || '',
+        rutFolio,
+        r._gnc_monto || 0,
+        ref,
+        r._gnc_fecha || '',
+        r._src // metadato oculto
+      ];
+    });
+
+    buildSheet(wb, 'Girados y No Cobrados', hG, wG, dG, (row) => {
+      const src = row[9]; // metadato
+      return {
+        bg: XL.amberBg,
+        colOverrides: {
+          1: src === 'lm'
+            ? { fill:'F5F3FF', color:'6D28D9', bold:true }
+            : { fill:XL.blueLt, color:'1D4ED8', bold:true },
+          6: { color: XL.amber, bold:true, align:'right' },
+          8: { color: XL.gray6 }
+        }
+      };
+    }, `GIRADOS Y NO COBRADOS · ${fecha}`);
+
+    const wsGnc = wb.getWorksheet('Girados y No Cobrados');
+    wsGnc.getColumn(10).hidden = true;
+  }
+
+  // ─────────────────────────────────────────────
+  // HOJA 5: Base Jefatura (si existe)
   // ─────────────────────────────────────────────
   if (DATA.jefatura && DATA.jefatura.length > 0) {
     const hJ = ['#','N° TED','Fecha Pago','Tipo de Pago','Monto Jef. ($)','Moneda','Nómina','Cuenta','Analista',
@@ -2296,6 +2659,14 @@ async function downloadExcel() {
     resRow('Total registros LM', s.lm_total),
     resRow('LM conciliados', s.lm_conciliados, {ok:true}),
     resRow('LM no conciliados', s.lm_no_conciliados, {warn:true}),
+    ...((DATA.gnc && DATA.gnc.length > 0) ? [
+      null,
+      { title: 'GIRADOS Y NO COBRADOS', isSection: true },
+      resRow('Total marcados', DATA.gnc.length, {warn:true}),
+      resRow('Desde Banco', DATA.gnc.filter(g=>g._src==='banco').length),
+      resRow('Desde Libro Mayor', DATA.gnc.filter(g=>g._src==='lm').length),
+      resRow('Monto total GNC ($)', DATA.gnc.reduce((a,g)=>a+(g._gnc_monto||0),0), {numFmt:true, warn:true, bold:true}),
+    ] : []),
     ...(DATA.jefatura ? [
       null,
       { title: 'BASE JEFATURA', isSection: true },
@@ -2412,6 +2783,7 @@ function buildResultHTML(dataJson) {
     <div class="tab active" onclick="sw('banco')">Cartola Banco <span class="badge" id="cb">0</span></div>
     <div class="tab" onclick="sw('lm')">Libro Mayor <span class="badge" id="cl">0</span></div>
     <div class="tab" onclick="sw('noc')">No Conciliados <span class="badge red" id="cn">0</span></div>
+    <div class="tab" onclick="sw('gnc')">Girados y No Cobrados <span class="badge" id="cg" style="background:rgba(245,158,11,.25);color:#fcd34d">0</span></div>
   </div>
 </div>
 <div class="content">
@@ -2439,10 +2811,10 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 function tp(t){const m={Ingreso:'ingreso',Egreso:'egreso',Traspaso:'traspaso','ABONO (Ingreso)':'ingreso','CARGO (Egreso)':'egreso'};const c=m[t]||'';return c?'<span class="pill '+c+'">'+t+'</span>':'<span style="font-size:11px;color:var(--g4)">'+(t||'—')+'</span>'}
 function ep(e){return e==='CONCILIADO'?'<span class="pill green"><span class="dot"></span>Conciliado</span>':'<span class="pill amber"><span class="dot"></span>No conciliado</span>'}
 function cp(c,e){if(!c||e==='NO CONCILIADO')return'';return c==='RUT+Monto'?'<span class="pill cr">🎯 RUT+Monto</span>':'<span class="pill cm">≈ Solo Monto</span>'}
-function sw(t){tab=t;pg=1;document.querySelectorAll('.tab').forEach((x,i)=>x.classList.toggle('active',['banco','lm','noc'][i]===t));document.getElementById('q').value='';document.getElementById('fe').value='';const rT=document.getElementById('ft');const rC=document.getElementById('fc');const rCr=document.getElementById('fcr');rT.innerHTML='<option value="">Todos los tipos</option>';rC.innerHTML='<option value="">Todas las cartolas</option>';if(t==='banco'){[...new Set(D.banco.map(r=>r.tipo))].sort().forEach(x=>rT.add(new Option(x,x)));[...new Set(D.banco.map(r=>r.cartola).filter(c=>c!=null))].sort((a,b)=>a-b).forEach(c=>rC.add(new Option('Cartola '+c,c)));rC.style.display='';rT.style.display='';rCr.style.display='';}else if(t==='lm'){[...new Set(D.lm.map(r=>r.tipo))].sort().forEach(x=>rT.add(new Option(x,x)));rC.style.display='none';rT.style.display='';rCr.style.display='none';}else{rC.style.display='none';rT.style.display='none';rCr.style.display='none';}document.getElementById('fe').style.display=t==='lm'?'none':'';af();rt()}
+function sw(t){tab=t;pg=1;document.querySelectorAll('.tab').forEach((x,i)=>x.classList.toggle('active',['banco','lm','noc','gnc'][i]===t));document.getElementById('q').value='';document.getElementById('fe').value='';const rT=document.getElementById('ft');const rC=document.getElementById('fc');const rCr=document.getElementById('fcr');rT.innerHTML='<option value="">Todos los tipos</option>';rC.innerHTML='<option value="">Todas las cartolas</option>';if(t==='banco'){[...new Set(D.banco.map(r=>r.tipo))].sort().forEach(x=>rT.add(new Option(x,x)));[...new Set(D.banco.map(r=>r.cartola).filter(c=>c!=null))].sort((a,b)=>a-b).forEach(c=>rC.add(new Option('Cartola '+c,c)));rC.style.display='';rT.style.display='';rCr.style.display='';}else if(t==='lm'){[...new Set(D.lm.map(r=>r.tipo))].sort().forEach(x=>rT.add(new Option(x,x)));rC.style.display='none';rT.style.display='';rCr.style.display='none';}else{rC.style.display='none';rT.style.display='none';rCr.style.display='none';}document.getElementById('fe').style.display=(t==='lm'||t==='gnc')?'none':'';af();rt()}
 function os(){pg=1;af();rt()}function of(){pg=1;af();rt()}
-function af(){const q=document.getElementById('q').value.toLowerCase().trim();const fE=document.getElementById('fe').value;const fT=document.getElementById('ft').value;const fC=document.getElementById('fc').value;const fCr=document.getElementById('fcr').value;let src;if(tab==='banco')src=D.banco;else if(tab==='lm')src=D.lm;else src=[...D.banco.filter(r=>r.estado==='NO CONCILIADO').map(r=>({...r,_s:'b'})),...D.lm.filter(r=>!r.conciliado).map(r=>({...r,_s:'l'}))];fil=src.filter(r=>{if(q){const h=[r.descripcion||'',r.glosa||'',r.comprobante_lm||'',r.docto||'',r.rut||'',String(r.rut_extraido||''),String(r.folio||''),String(r.folio_lm||''),String(r.monto||r.debe||r.haber||''),String(r.cartola||'')].join(' ').toLowerCase();if(!h.includes(q))return false}if(fE&&r.estado!==undefined&&r.estado!==fE)return false;if(fT&&r.tipo!==fT)return false;if(fC&&r.cartola!==undefined&&String(r.cartola)!==fC)return false;if(fCr&&r.criterio!==fCr)return false;return true});document.getElementById('tc').textContent=fil.length+' registros'}
-function rt(){const thead=document.getElementById('th');const tbody=document.getElementById('tb');const s=(pg-1)*PG;const rows=fil.slice(s,s+PG);if(tab==='banco'){thead.innerHTML='<tr><th>#</th><th>Cartola</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>RUT Banco</th><th style="text-align:right">Monto ($)</th><th>Folio LM</th><th>Comprobante</th><th>Tipo Comp.</th><th>Criterio</th><th>Estado</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>'<tr class="'+(r.estado==='CONCILIADO'?'c':'nc')+'"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td class="mono" style="font-size:11px">'+(r.cartola!=null?'C'+r.cartola:'')+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>')+'</td><td title="'+esc(r.descripcion)+'">'+esc(r.descripcion)+'</td><td class="mono" style="font-size:11px;color:var(--g5)">'+(r.rut_extraido||'—')+'</td><td class="ar '+(r.tipo_code==='A'?'pos':'neg')+'">'+fn(r.monto)+'</td><td>'+(r.folio_lm?'<span class="ft">'+r.folio_lm+'</span>':'<span style="color:var(--g4)">—</span>')+'</td><td class="mono" style="font-size:11px">'+(r.comprobante_lm||'—')+'</td><td>'+tp(r.tipo_comprobante)+'</td><td>'+cp(r.criterio,r.estado)+'</td><td>'+ep(r.estado)+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">Sin resultados</td></tr>';}else if(tab==='lm'){thead.innerHTML='<tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Folio</th><th>RUT</th><th>Glosa</th><th>Docto.</th><th style="text-align:right">Debe ($)</th><th style="text-align:right">Haber ($)</th><th style="text-align:right">Saldo ($)</th><th>Criterio</th><th>Estado</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>'<tr class="'+(!r.conciliado?'nc':'')+'"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+tp(r.tipo)+'</td><td>'+(r.folio!=null?'<span class="ft">'+r.folio+'</span>':'—')+'</td><td class="mono" style="font-size:11px">'+r.rut+'</td><td title="'+esc(r.glosa)+'">'+esc(r.glosa)+'</td><td class="mono" style="font-size:11px">'+r.docto+'</td><td class="ar pos">'+(r.debe>0?fn(r.debe):'—')+'</td><td class="ar neg">'+(r.haber>0?fn(r.haber):'—')+'</td><td class="ar mono" style="font-size:11px;color:var(--g5)">'+(r.saldo!=null?fs(r.saldo):'—')+'</td><td>'+cp(r.criterio,r.conciliado?'CONCILIADO':'NO CONCILIADO')+'</td><td>'+(r.conciliado?'<span class="pill green"><span class="dot"></span>Conciliado</span>':'<span class="pill amber"><span class="dot"></span>No conciliado</span>')+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">Sin resultados</td></tr>';}else{thead.innerHTML='<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción/Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>{const iB=r._s==='b';const mo=iB?r.monto:(r.debe>0?r.debe:r.haber);const de=iB?r.descripcion:r.glosa;const re=iB?(r.comprobante_lm||'—'):r.docto;return'<tr class="nc"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td>'+(iB?'<span class="pill bs">Banco</span>':'<span class="pill ls">Libro Mayor</span>')+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+(iB?(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>'):tp(r.tipo))+'</td><td title="'+esc(de)+'">'+esc(de)+'</td><td class="ar" style="color:'+(iB&&r.tipo_code==='A'?'var(--green)':'#dc2626')+'">'+fn(mo)+'</td><td class="mono" style="font-size:11px">'+re+'</td></tr>';}).join(''):'<tr><td colspan="7" class="empty">✅ Todo conciliado</td></tr>';}rp()}
+function af(){const q=document.getElementById('q').value.toLowerCase().trim();const fE=document.getElementById('fe').value;const fT=document.getElementById('ft').value;const fC=document.getElementById('fc').value;const fCr=document.getElementById('fcr').value;let src;if(tab==='banco')src=D.banco;else if(tab==='lm')src=D.lm;else if(tab==='gnc')src=(D.gnc||[]);else src=[...D.banco.filter(r=>r.estado==='NO CONCILIADO').map(r=>({...r,_s:'b'})),...D.lm.filter(r=>!r.conciliado&&!r.gnc).map(r=>({...r,_s:'l'}))];fil=src.filter(r=>{if(q){const h=[r.descripcion||'',r.glosa||'',r.comprobante_lm||'',r.docto||'',r.rut||'',String(r.rut_extraido||''),String(r.folio||''),String(r.folio_lm||''),String(r.monto||r.debe||r.haber||r._gnc_monto||''),String(r.cartola||'')].join(' ').toLowerCase();if(!h.includes(q))return false}if(fE&&r.estado!==undefined&&r.estado!==fE)return false;if(fT&&r.tipo!==fT)return false;if(fC&&r.cartola!==undefined&&String(r.cartola)!==fC)return false;if(fCr&&r.criterio!==fCr)return false;return true});document.getElementById('tc').textContent=fil.length+' registros'}
+function rt(){const thead=document.getElementById('th');const tbody=document.getElementById('tb');const s=(pg-1)*PG;const rows=fil.slice(s,s+PG);if(tab==='banco'){thead.innerHTML='<tr><th>#</th><th>Cartola</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>RUT Banco</th><th style="text-align:right">Monto ($)</th><th>Folio LM</th><th>Comprobante</th><th>Tipo Comp.</th><th>Criterio</th><th>Estado</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>'<tr class="'+(r.estado==='CONCILIADO'?'c':'nc')+'"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td class="mono" style="font-size:11px">'+(r.cartola!=null?'C'+r.cartola:'')+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>')+'</td><td title="'+esc(r.descripcion)+'">'+esc(r.descripcion)+'</td><td class="mono" style="font-size:11px;color:var(--g5)">'+(r.rut_extraido||'—')+'</td><td class="ar '+(r.tipo_code==='A'?'pos':'neg')+'">'+fn(r.monto)+'</td><td>'+(r.folio_lm?'<span class="ft">'+r.folio_lm+'</span>':'<span style="color:var(--g4)">—</span>')+'</td><td class="mono" style="font-size:11px">'+(r.comprobante_lm||'—')+'</td><td>'+tp(r.tipo_comprobante)+'</td><td>'+cp(r.criterio,r.estado)+'</td><td>'+ep(r.estado)+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">Sin resultados</td></tr>';}else if(tab==='lm'){thead.innerHTML='<tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Folio</th><th>RUT</th><th>Glosa</th><th>Docto.</th><th style="text-align:right">Debe ($)</th><th style="text-align:right">Haber ($)</th><th style="text-align:right">Saldo ($)</th><th>Criterio</th><th>Estado</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>'<tr class="'+(!r.conciliado?'nc':'')+'"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+tp(r.tipo)+'</td><td>'+(r.folio!=null?'<span class="ft">'+r.folio+'</span>':'—')+'</td><td class="mono" style="font-size:11px">'+r.rut+'</td><td title="'+esc(r.glosa)+'">'+esc(r.glosa)+'</td><td class="mono" style="font-size:11px">'+r.docto+'</td><td class="ar pos">'+(r.debe>0?fn(r.debe):'—')+'</td><td class="ar neg">'+(r.haber>0?fn(r.haber):'—')+'</td><td class="ar mono" style="font-size:11px;color:var(--g5)">'+(r.saldo!=null?fs(r.saldo):'—')+'</td><td>'+cp(r.criterio,r.conciliado?'CONCILIADO':'NO CONCILIADO')+'</td><td>'+(r.conciliado?'<span class="pill green"><span class="dot"></span>Conciliado</span>':'<span class="pill amber"><span class="dot"></span>No conciliado</span>')+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">Sin resultados</td></tr>';}else if(tab==='gnc'){thead.innerHTML='<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción/Glosa</th><th>RUT/Folio</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th>Marcado</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>{const iB=r._src==='banco';const mo=r._gnc_monto;const de=iB?r.descripcion:r.glosa;const re=iB?(r.comprobante_lm||'—'):(r.docto||'—');const rf=iB?(r.rut_extraido||'—'):(r.folio!=null?'Folio '+r.folio:(r.rut||'—'));return'<tr class="nc"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td>'+(iB?'<span class="pill bs">Banco</span>':'<span class="pill ls">Libro Mayor</span>')+'</td><td class="mono" style="font-size:11px">'+(r.fecha||'—')+'</td><td>'+(iB?(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>'):tp(r.tipo))+'</td><td title="'+esc(de)+'">'+esc(de)+'</td><td class="mono" style="font-size:11px;color:var(--g5)">'+rf+'</td><td class="ar" style="color:#92400e;font-weight:700">$'+fn(mo)+'</td><td class="mono" style="font-size:11px">'+re+'</td><td class="mono" style="font-size:10px;color:var(--g5)">'+(r._gnc_fecha||'—')+'</td></tr>';}).join(''):'<tr><td colspan="9" class="empty">No hay movimientos marcados como Girados y No Cobrados</td></tr>';}else{thead.innerHTML='<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción/Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th></tr>';tbody.innerHTML=rows.length?rows.map((r,i)=>{const iB=r._s==='b';const mo=iB?r.monto:(r.debe>0?r.debe:r.haber);const de=iB?r.descripcion:r.glosa;const re=iB?(r.comprobante_lm||'—'):r.docto;return'<tr class="nc"><td class="mono" style="color:var(--g4);font-size:10px">'+(s+i+1)+'</td><td>'+(iB?'<span class="pill bs">Banco</span>':'<span class="pill ls">Libro Mayor</span>')+'</td><td class="mono" style="font-size:11px">'+r.fecha+'</td><td>'+(iB?(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>'):tp(r.tipo))+'</td><td title="'+esc(de)+'">'+esc(de)+'</td><td class="ar" style="color:'+(iB&&r.tipo_code==='A'?'var(--green)':'#dc2626')+'">'+fn(mo)+'</td><td class="mono" style="font-size:11px">'+re+'</td></tr>';}).join(''):'<tr><td colspan="7" class="empty">✅ Todo conciliado</td></tr>';}rp()}
 function rp(){const tot=fil.length;const pages=Math.ceil(tot/PG);const p=document.getElementById('pg');if(!tot){p.innerHTML='';return}const s=(pg-1)*PG+1,e=Math.min(pg*PG,tot);let b='';for(let i=1;i<=pages;i++){if(i===1||i===pages||(i>=pg-2&&i<=pg+2))b+='<button class="pb'+(i===pg?' a':'')+'" onclick="gp('+i+')">'+i+'</button>';else if(i===pg-3||i===pg+3)b+='<span style="padding:4px;color:var(--g4)">…</span>';}p.innerHTML='<span class="pi">'+s+'–'+e+' de '+tot+'</span><div class="pb-w"><button class="pb" onclick="gp('+(pg-1)+')" '+(pg===1?'disabled':'')+'>‹</button>'+b+'<button class="pb" onclick="gp('+(pg+1)+')" '+(pg===pages?'disabled':'')+'>›</button></div>'}
 function gp(p){const pages=Math.ceil(fil.length/PG);if(p<1||p>pages)return;pg=p;document.querySelector('.ts').scrollTop=0;rt()}
 function dlXL(){
@@ -2526,7 +2898,7 @@ return wb2.xlsx.writeBuffer().then(buf=>{
 });
 }
 // Init
-const s2=D.summary;const pct2=(s2.conciliados/s2.total*100).toFixed(1);document.getElementById('cards').innerHTML=[{l:'Conciliados',v:s2.conciliados+'/'+s2.total,s:pct2+'% del total',c:'green'},{l:'No Conciliados',v:s2.no_conciliados,s:'banco + LM',c:'amber'},{l:'Por RUT+Monto',v:s2.por_rut_monto,s:'exacto',c:'green'},{l:'Solo por Monto',v:s2.por_monto,s:'sin RUT en banco',c:'blue'},{l:'Total Abonos',v:'\$'+(s2.total_abonos/1e9).toFixed(2)+'B',s:Math.abs(s2.total_abonos).toLocaleString('es-CL'),c:'blue'},{l:'Total Cargos',v:'\$'+(s2.total_cargos/1e9).toFixed(2)+'B',s:Math.abs(s2.total_cargos).toLocaleString('es-CL'),c:'blue'}].map(x=>'<div class="card '+x.c+'"><div class="card-label">'+x.l+'</div><div class="card-value">'+x.v+'</div><div class="card-sub">'+x.s+'</div></div>').join('');document.getElementById('cb').textContent=s2.total;document.getElementById('cl').textContent=s2.lm_total;document.getElementById('cn').textContent=s2.no_conciliados+s2.lm_no_conciliados;sw('banco');
+const s2=D.summary;const pct2=(s2.conciliados/s2.total*100).toFixed(1);document.getElementById('cards').innerHTML=[{l:'Conciliados',v:s2.conciliados+'/'+s2.total,s:pct2+'% del total',c:'green'},{l:'No Conciliados',v:s2.no_conciliados,s:'banco + LM',c:'amber'},{l:'Por RUT+Monto',v:s2.por_rut_monto,s:'exacto',c:'green'},{l:'Solo por Monto',v:s2.por_monto,s:'sin RUT en banco',c:'blue'},{l:'Total Abonos',v:'\$'+(s2.total_abonos/1e9).toFixed(2)+'B',s:Math.abs(s2.total_abonos).toLocaleString('es-CL'),c:'blue'},{l:'Total Cargos',v:'\$'+(s2.total_cargos/1e9).toFixed(2)+'B',s:Math.abs(s2.total_cargos).toLocaleString('es-CL'),c:'blue'}].map(x=>'<div class="card '+x.c+'"><div class="card-label">'+x.l+'</div><div class="card-value">'+x.v+'</div><div class="card-sub">'+x.s+'</div></div>').join('');document.getElementById('cb').textContent=s2.total;document.getElementById('cl').textContent=s2.lm_total;document.getElementById('cn').textContent=s2.no_conciliados+s2.lm_no_conciliados;document.getElementById('cg').textContent=(D.gnc||[]).length;sw('banco');
 <\/script></body></html>`;
 }
 </script>

@@ -6,6 +6,7 @@
 <title>Revisión de Pagos — ANID</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#0c1e3c;--navy2:#162d52;--blue:#2563eb;--blue-l:#3b82f6;--green:#16a34a;--green-bg:#dcfce7;--green-br:#86efac;--amber:#92400e;--amber-bg:#fef3c7;--amber-br:#fcd34d;--red:#dc2626;--g0:#f8fafc;--g1:#f1f5f9;--g2:#e2e8f0;--g3:#cbd5e1;--g4:#94a3b8;--g5:#64748b;--g6:#475569;--g8:#1e293b;--white:#fff;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace}
@@ -393,7 +394,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 
 /* ── MODAL CONCILIAR MANUAL ── */
 .conciliar-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease}
-.conciliar-modal-box{background:white;border-radius:14px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden;animation:slideUp .18s ease}
+.conciliar-modal-box{background:white;border-radius:14px;width:100%;max-width:900px;max-height:94vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden;animation:slideUp .18s ease}
 .conciliar-header{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:18px 24px;flex-shrink:0}
 .conciliar-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .conciliar-header h2{font-size:15px;font-weight:700;color:white;margin-bottom:4px}
@@ -407,7 +408,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 .conciliar-search .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g4);font-size:13px;pointer-events:none}
 .conciliar-search-wrap{position:relative;flex:1}
 .conciliar-section-label{padding:10px 24px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--g4);background:var(--g0);border-bottom:1px solid var(--g2)}
-.conciliar-body{overflow-y:auto;flex:1}
+.conciliar-body{overflow-y:auto;flex:1;min-height:0;max-height:38vh}
 .conciliar-lm-table{width:100%;border-collapse:collapse;font-size:12px}
 .conciliar-lm-table th{background:var(--navy);color:white;padding:9px 12px;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;border-right:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:5}
 .conciliar-lm-table th:last-child{border-right:none}
@@ -423,6 +424,43 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
 .conciliar-footer{padding:14px 24px;border-top:1px solid var(--g2);background:var(--g0);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .conciliar-footer-hint{font-size:11px;color:var(--g4)}
 .conciliar-empty{text-align:center;padding:40px 20px;color:var(--g4);font-size:13px}
+/* ── PDF Validator Panel ── */
+.pdf-val-panel{border-top:2px solid var(--g2);background:#f8faff;flex-shrink:0}
+.pdf-val-toggle{display:flex;align-items:center;gap:8px;padding:10px 24px;cursor:pointer;user-select:none;font-size:12px;font-weight:600;color:var(--navy2);transition:background .15s}
+.pdf-val-toggle:hover{background:#eef2ff}
+.pdf-val-toggle .pvt-icon{font-size:15px}
+.pdf-val-toggle .pvt-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;font-family:var(--mono)}
+.pdf-val-toggle .pvt-badge.ok{background:#d1fae5;color:#047857}
+.pdf-val-toggle .pvt-badge.warn{background:#fef3c7;color:#92400e}
+.pdf-val-toggle .pvt-badge.err{background:#fee2e2;color:#b91c1c}
+.pdf-val-toggle .pvt-badge.neutral{background:#e0e7ff;color:#3730a3}
+.pdf-val-body{padding:12px 24px 16px;border-top:1px solid var(--g2)}
+.pdf-dropzone{border:2px dashed #a5b4fc;border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:white;position:relative}
+.pdf-dropzone:hover,.pdf-dropzone.drag-over{border-color:#6366f1;background:#eef2ff}
+.pdf-dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pdf-dropzone .pdz-icon{font-size:24px;margin-bottom:4px}
+.pdf-dropzone .pdz-text{font-size:12px;color:var(--g5);font-weight:500}
+.pdf-dropzone .pdz-hint{font-size:10px;color:var(--g4);margin-top:2px}
+.pdf-val-result{margin-top:12px}
+.pdf-val-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;font-weight:600;color:var(--g5);text-transform:uppercase;letter-spacing:.6px}
+.pdf-montos-list{max-height:130px;overflow-y:auto;border:1px solid var(--g2);border-radius:7px;background:white}
+.pdf-montos-list table{width:100%;border-collapse:collapse;font-size:11px}
+.pdf-montos-list th{background:var(--g1);padding:5px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--g5);letter-spacing:.5px;text-transform:uppercase;position:sticky;top:0}
+.pdf-montos-list td{padding:5px 10px;border-bottom:1px solid var(--g1);font-family:var(--mono)}
+.pdf-montos-list tr:last-child td{border-bottom:none}
+.pdf-val-summary{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.pvs-item{flex:1;min-width:100px;background:white;border:1px solid var(--g2);border-radius:8px;padding:8px 12px}
+.pvs-item .pvs-lbl{font-size:10px;color:var(--g4);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.pvs-item .pvs-val{font-size:13px;font-weight:700;color:var(--g8);font-family:var(--mono)}
+.pvs-item.match{border-color:#6ee7b7;background:#f0fdf4}.pvs-item.match .pvs-val{color:#047857}
+.pvs-item.over{border-color:#fca5a5;background:#fff1f2}.pvs-item.over .pvs-val{color:#b91c1c}
+.pvs-item.under{border-color:#fcd34d;background:#fffbeb}.pvs-item.under .pvs-val{color:#92400e}
+.pdf-val-actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+.btn-pdf-clear{font-size:11px;padding:4px 10px;background:white;border:1px solid var(--g2);border-radius:6px;cursor:pointer;color:var(--g5);font-family:var(--font)}
+.btn-pdf-clear:hover{border-color:#fca5a5;color:#b91c1c}
+.pdf-parsing{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--g4);padding:8px 0}
+.pdf-parsing .spin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -525,6 +563,24 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
         <input type="file" accept=".xlsx,.xls" onchange="onFileSelect(event,'resume')">
       </div>
 
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px">
+        <div style="flex:1;height:1px;background:var(--g2)"></div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--g4)">comprobantes de egreso (opcional)</span>
+        <div style="flex:1;height:1px;background:var(--g2)"></div>
+      </div>
+
+      <!-- Zona carga PDFs -->
+      <div id="upload-pdf-zone" style="border:2px dashed #a5b4fc;border-radius:10px;padding:16px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:white;margin-bottom:4px"
+           ondragover="event.preventDefault();document.getElementById('upload-pdf-zone').style.borderColor='#6366f1';document.getElementById('upload-pdf-zone').style.background='#eef2ff'"
+           ondragleave="document.getElementById('upload-pdf-zone').style.borderColor='#a5b4fc';document.getElementById('upload-pdf-zone').style.background='white'"
+           ondrop="onUploadPdfDrop(event)">
+        <input type="file" accept=".pdf" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="onUploadPdfChange(this)">
+        <div style="font-size:22px;margin-bottom:4px">📄</div>
+        <div style="font-size:12px;font-weight:600;color:#4338ca">PDFs de Comprobante de Egreso</div>
+        <div style="font-size:10px;color:var(--g4);margin-top:2px">Arrastra uno o más PDFs — se analizarán al iniciar comprobación</div>
+      </div>
+      <div id="upload-pdf-list" style="display:none;margin-bottom:4px;border:1px solid #e0e7ff;border-top:none;border-radius:0 0 10px 10px;background:#f8faff;padding:6px 10px"></div>
+
       <button class="btn-process" id="btn-process" onclick="process()" disabled style="margin-top:18px">
         <div class="spinner"></div>
         <span class="btn-text" id="btn-process-text">⚡ Iniciar comprobación</span>
@@ -589,6 +645,7 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
       <div class="topbar-actions">
         <button class="btn-sm btn-ghost" onclick="resetApp()">← Nuevo archivo</button>
         <button class="btn-sm" style="background:rgba(245,158,11,.15);color:#fcd34d;border-color:rgba(245,158,11,.35)" onclick="showMontosModal()">💰 Montos a Conciliar</button>
+        <button class="btn-sm" style="background:rgba(99,102,241,.18);color:#a5b4fc;border-color:rgba(99,102,241,.35)" onclick="showPdfValidatorModal()" id="btn-pdf-val">📄 PDFs Egreso <span id="btn-pdf-val-cnt" style="display:none;background:#6366f1;color:white;border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
         <button class="btn-sm btn-green" id="btn-xl" onclick="this.textContent='⏳ Generando…';downloadExcel().finally(()=>this.textContent='⬇ Excel')">⬇ Excel</button>
         <button class="btn-sm btn-blue" onclick="downloadHTML()">⬇ HTML</button>
       </div>
@@ -790,12 +847,70 @@ tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm
         <div class="cm-tot-val" id="cm-tot-cnt">0</div>
       </div>
     </div>
+    <!-- ── Panel Validar PDF de Egreso ── -->
+    <div class="pdf-val-panel" id="pdf-val-panel">
+      <div class="pdf-val-toggle" id="pdf-val-toggle" onclick="togglePdfValPanel()">
+        <span class="pvt-icon">📄</span>
+        <span>Validar con PDF de Comprobante de Egreso</span>
+        <span class="pvt-badge neutral" id="pvt-badge">Sin cargar</span>
+        <span id="pvt-arrow" style="font-size:11px;color:var(--g4);transition:transform .2s">▼</span>
+      </div>
+      <div class="pdf-val-body" id="pdf-val-body" style="display:none">
+        <div class="pdf-dropzone" id="pdf-dropzone"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="onPdfDrop(event)">
+          <input type="file" accept=".pdf" onchange="onPdfFileChange(this)">
+          <div class="pdz-icon">📁</div>
+          <div class="pdz-text">Arrastra el PDF aquí o haz clic para seleccionar</div>
+          <div class="pdz-hint">Comprobante de egreso con los montos individuales</div>
+        </div>
+        <div id="pdf-val-result"></div>
+      </div>
+    </div>
     <div class="conciliar-footer">
       <span class="conciliar-footer-hint" id="cm-count-hint">— registros disponibles</span>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn-sm" style="background:var(--g1);color:var(--g6);border-color:var(--g2)" onclick="closeConciliarModal()">Cancelar</button>
         <button class="btn-confirmar-conc" id="cm-btn-confirmar" onclick="confirmarMultiConciliar()">✅ Confirmar selección (<span id="cm-cnt-label">0</span>)</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: VALIDADOR PDFs DE EGRESO ══ -->
+<div id="pdf-validator-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto" onclick="if(event.target===this)hidePdfValidatorModal()">
+  <div style="background:white;border-radius:16px;width:100%;max-width:1060px;margin:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;animation:slideUp .18s ease">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#312e81,#4338ca);padding:18px 28px;flex-shrink:0">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <h2 style="font-size:15px;font-weight:700;color:white;margin:0">📄 Validador de PDFs de Egreso</h2>
+          <p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;font-family:var(--mono)">Carga el comprobante → extrae montos → busca match con registros sin conciliar</p>
+        </div>
+        <button onclick="hidePdfValidatorModal()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>
+    </div>
+    <!-- Drop zone -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--g2);background:#f8faff;flex-shrink:0">
+      <div id="pvm-dropzone" style="border:2px dashed #a5b4fc;border-radius:10px;padding:16px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:white"
+           ondragover="event.preventDefault();document.getElementById('pvm-dropzone').style.borderColor='#6366f1';document.getElementById('pvm-dropzone').style.background='#eef2ff'"
+           ondragleave="document.getElementById('pvm-dropzone').style.borderColor='#a5b4fc';document.getElementById('pvm-dropzone').style.background='white'"
+           ondrop="onPvmDrop(event)">
+        <input type="file" accept=".pdf" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="onPvmFileChange(this)">
+        <div style="font-size:22px;margin-bottom:4px">📁</div>
+        <div style="font-size:12px;font-weight:600;color:var(--g6)">Arrastra uno o más PDFs aquí, o haz clic para seleccionar</div>
+        <div style="font-size:10px;color:var(--g4);margin-top:2px">Comprobantes de egreso con montos individuales y/o totales</div>
+      </div>
+    </div>
+    <!-- Lista PDFs cargados -->
+    <div id="pvm-list" style="background:#fafafa;border-bottom:1px solid var(--g2);flex-shrink:0"></div>
+    <!-- Resultados del análisis -->
+    <div id="pvm-resultados" style="overflow-y:auto;max-height:55vh;flex:1"></div>
+    <!-- Footer -->
+    <div id="pvm-footer" style="display:none;padding:12px 20px;border-top:1px solid var(--g2);background:var(--g0);align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap">
+      <div id="pvm-global-sum" style="font-size:12px;color:var(--g6)"></div>
+      <button onclick="pvmLimpiarTodo()" style="padding:6px 12px;background:white;color:var(--g5);border:1px solid var(--g2);border-radius:7px;font-size:11px;cursor:pointer;font-family:var(--font)">🗑 Limpiar todo</button>
     </div>
   </div>
 </div>
@@ -1554,6 +1669,8 @@ function showResults() {
   // Inicializar lista de Girados y No Cobrados (vacía al inicio)
   if (!DATA.gnc) DATA.gnc = [];
   if (!DATA.anulados) DATA.anulados = [];
+  // Transferir PDFs cargados en pantalla inicial al validador
+  transferUploadPdfsToValidator();
   const s = DATA.summary;
   const pct = (s.conciliados/s.total*100).toFixed(1);
   document.getElementById('topbar-sub').textContent = files.resume
@@ -1606,7 +1723,56 @@ function resetApp() {
   const btnText = document.getElementById('btn-process-text');
   if (btnText) btnText.textContent = '⚡ Iniciar comprobación';
   document.querySelectorAll('.drop-zone input').forEach(i=>i.value='');
+  // Limpiar zona PDF upload
+  _uploadPdfFiles = [];
+  renderUploadPdfList();
 }
+
+// ── Zona de PDFs en pantalla de carga ──
+let _uploadPdfFiles = []; // File[] — se transfieren al validador al iniciar
+
+function onUploadPdfDrop(e) {
+  e.preventDefault();
+  const zone = document.getElementById('upload-pdf-zone');
+  if (zone) { zone.style.borderColor='#a5b4fc'; zone.style.background='white'; }
+  Array.from(e.dataTransfer?.files||[]).filter(f=>f.type==='application/pdf').forEach(f=>{
+    if (!_uploadPdfFiles.find(x=>x.name===f.name)) _uploadPdfFiles.push(f);
+  });
+  renderUploadPdfList();
+}
+function onUploadPdfChange(input) {
+  Array.from(input.files||[]).forEach(f=>{
+    if (!_uploadPdfFiles.find(x=>x.name===f.name)) _uploadPdfFiles.push(f);
+  });
+  input.value='';
+  renderUploadPdfList();
+}
+function removeUploadPdf(name) {
+  _uploadPdfFiles = _uploadPdfFiles.filter(f=>f.name!==name);
+  renderUploadPdfList();
+}
+function renderUploadPdfList() {
+  const el = document.getElementById('upload-pdf-list');
+  if (!el) return;
+  if (_uploadPdfFiles.length===0) { el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='block';
+  el.innerHTML = _uploadPdfFiles.map(f=>
+    '<div style="display:flex;align-items:center;gap:6px;padding:4px 2px;font-size:11px">'
+    +'<span>📄</span>'
+    +'<span style="flex:1;color:var(--g7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</span>'
+    +'<button onclick="removeUploadPdf(\''+esc(f.name.replace(/'/g,"\\'"))+'\')" style="background:none;border:none;color:var(--g4);cursor:pointer;font-size:12px;padding:0 2px">✕</button>'
+    +'</div>'
+  ).join('');
+}
+// Transferir PDFs al validador cuando se muestra el dashboard
+function transferUploadPdfsToValidator() {
+  if (!_uploadPdfFiles.length) return;
+  _uploadPdfFiles.forEach(f => addPvmFile(f));
+  _uploadPdfFiles = [];
+  renderUploadPdfList();
+}
+
+
 
 // ══════════════════════════════════════════════
 // TAB / FILTER / TABLE
@@ -2875,6 +3041,10 @@ function updateCMTotals() {
     elDiff.className = 'cm-tot-diff ' + (diff === 0 ? 'zero' : diff < 0 ? 'ok' : 'over');
   }
   if (elCnt) elCnt.textContent = cnt;
+  // Refrescar panel PDF si hay datos cargados
+  if (_pdfValData) {
+    renderPdfValResult(_pdfValData.montos, _pdfValData.suma, montoOrigen, _pdfValData.fileName);
+  }
 }
 
 // Confirmar la conciliación con múltiples registros (bidireccional)
@@ -2960,6 +3130,516 @@ function closeConciliarModal() {
   _cmSelectedLm = new Set();
   const bar = document.getElementById('cm-totals-bar');
   if (bar) bar.style.display = 'none';
+  resetPdfValPanel();
+}
+
+// ══════════════════════════════════════════════
+// PDF EGRESO VALIDATOR
+// ══════════════════════════════════════════════
+let _pdfValOpen = false;
+let _pdfValData = null; // { montos: [], suma: number, fileName: string }
+
+// Configurar PDF.js worker
+(function() {
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+})();
+
+function togglePdfValPanel() {
+  _pdfValOpen = !_pdfValOpen;
+  const body  = document.getElementById('pdf-val-body');
+  const arrow = document.getElementById('pvt-arrow');
+  if (body)  body.style.display  = _pdfValOpen ? 'block' : 'none';
+  if (arrow) arrow.style.transform = _pdfValOpen ? 'rotate(180deg)' : '';
+}
+
+function resetPdfValPanel() {
+  _pdfValOpen = false;
+  _pdfValData = null;
+  const body  = document.getElementById('pdf-val-body');
+  const arrow = document.getElementById('pvt-arrow');
+  const badge = document.getElementById('pvt-badge');
+  const res   = document.getElementById('pdf-val-result');
+  if (body)  { body.style.display = 'none'; }
+  if (arrow) { arrow.style.transform = ''; }
+  if (badge) { badge.className = 'pvt-badge neutral'; badge.textContent = 'Sin cargar'; }
+  if (res)   { res.innerHTML = ''; }
+  // Reset dropzone
+  const dz = document.getElementById('pdf-dropzone');
+  if (dz) dz.style.display = '';
+}
+
+function onPdfDrop(e) {
+  e.preventDefault();
+  const dz = document.getElementById('pdf-dropzone');
+  if (dz) dz.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type === 'application/pdf') processPdfEgreso(file);
+  else showToast('⚠ Solo se aceptan archivos PDF', 'warn');
+}
+
+function onPdfFileChange(input) {
+  const file = input?.files?.[0];
+  if (file) processPdfEgreso(file);
+}
+
+async function processPdfEgreso(file) {
+  const res = document.getElementById('pdf-val-result');
+  const badge = document.getElementById('pvt-badge');
+  if (!res || !badge) return;
+
+  res.innerHTML = '<div class="pdf-parsing"><span class="spin">⏳</span> Extrayendo montos del PDF…</div>';
+  badge.className = 'pvt-badge neutral';
+  badge.textContent = 'Procesando…';
+
+  try {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js no disponible. Recarga la página.');
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const allText = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(it => it.str).join(' ');
+      allText.push(pageText);
+    }
+
+    const fullText = allText.join('\n');
+
+    // Extraer todos los montos numéricos chilenos
+    // Formatos: 1.234.567  /  1234567  /  1.234  /  $1.234.567
+    const rawMontos = [];
+    // Regex: números con puntos como separador de miles (formato chileno)
+    const re = /\$?\s*([\d]{1,3}(?:\.[\d]{3})+|[\d]{4,})/g;
+    let m;
+    while ((m = re.exec(fullText)) !== null) {
+      const raw = m[1].replace(/\./g, '');
+      const val = parseInt(raw, 10);
+      if (!isNaN(val) && val >= 1000) rawMontos.push(val); // ignorar < 1000 (años, etc.)
+    }
+
+    if (rawMontos.length === 0) {
+      throw new Error('No se encontraron montos en el PDF. Verifica que tenga texto extraíble (no sea imagen escaneada).');
+    }
+
+    // Deduplicar y ordenar de mayor a menor
+    const montos = [...new Set(rawMontos)].sort((a,b) => b - a);
+    const suma = montos.reduce((s, v) => s + v, 0);
+
+    _pdfValData = { montos, suma, fileName: file.name };
+
+    // Obtener monto bancario origen
+    let montoBanco = 0;
+    if (_conciliarBancoIdx !== null) {
+      if (_conciliarSrc === 'banco') {
+        montoBanco = DATA.banco[_conciliarBancoIdx]?.monto || 0;
+      } else {
+        const lr = DATA.lm[_conciliarBancoIdx];
+        montoBanco = lr ? (lr.debe > 0 ? lr.debe : lr.haber) : 0;
+      }
+    }
+
+    renderPdfValResult(montos, suma, montoBanco, file.name);
+
+  } catch (err) {
+    badge.className = 'pvt-badge err';
+    badge.textContent = 'Error';
+    res.innerHTML = `<div style="color:#b91c1c;font-size:12px;padding:8px 0">⚠ ${esc(err.message)}</div>`;
+  }
+}
+
+function renderPdfValResult(montos, suma, montoBanco, fileName) {
+  const res   = document.getElementById('pdf-val-result');
+  const badge = document.getElementById('pvt-badge');
+  const dz    = document.getElementById('pdf-dropzone');
+  if (!res || !badge) return;
+
+  const diff = suma - montoBanco;
+  const absDiff = Math.abs(diff);
+  const cuadra  = diff === 0;
+  const cerca   = !cuadra && absDiff <= montoBanco * 0.01; // ≤1% diferencia
+
+  // Badge
+  if (cuadra) {
+    badge.className = 'pvt-badge ok';
+    badge.textContent = '✓ Cuadra exacto';
+  } else if (cerca) {
+    badge.className = 'pvt-badge warn';
+    badge.textContent = `≈ Diff $${fmtNum(absDiff)}`;
+  } else {
+    badge.className = 'pvt-badge warn';
+    badge.textContent = `Diff $${fmtNum(absDiff)}`;
+  }
+
+  // Ocultar dropzone, mostrar resultado
+  if (dz) dz.style.display = 'none';
+
+  // Clasificar los montos: ¿cuáles corresponden a registros LM seleccionados?
+  const lmMontos = new Set();
+  _cmSelectedLm.forEach(idx => {
+    const lr = DATA.lm[idx];
+    if (lr) lmMontos.add(lr.debe > 0 ? lr.debe : lr.haber);
+  });
+
+  // Tabla de montos extraídos
+  const rows = montos.slice(0, 50).map(v => {
+    const enLM = lmMontos.has(v);
+    return `<tr style="${enLM ? 'background:#f0fdf4' : ''}">
+      <td style="color:var(--g5)">${enLM ? '✓' : ''}</td>
+      <td style="text-align:right;font-weight:${enLM?'700':'400'};color:${enLM?'#047857':'var(--g8)'}">$${fmtNum(v)}</td>
+    </tr>`;
+  }).join('');
+
+  const moreCount = montos.length > 50 ? `<tr><td colspan="2" style="text-align:center;color:var(--g4);padding:4px">…y ${montos.length-50} más</td></tr>` : '';
+
+  // Summary cards
+  const diffClass = cuadra ? 'match' : diff < 0 ? 'under' : 'over';
+  const diffLabel = cuadra ? '✓ Cuadra exacto' : diff > 0 ? `+$${fmtNum(absDiff)} (excede)` : `-$${fmtNum(absDiff)} (falta)`;
+
+  res.innerHTML = `
+    <div class="pdf-val-result">
+      <div class="pdf-val-header">📄 ${esc(fileName.length > 40 ? fileName.slice(0,37)+'…' : fileName)}</div>
+      <div style="display:flex;gap:10px">
+        <div class="pdf-montos-list" style="flex:1">
+          <table>
+            <thead><tr><th></th><th style="text-align:right">Monto extraído</th></tr></thead>
+            <tbody>${rows}${moreCount}</tbody>
+          </table>
+        </div>
+        <div style="flex:1">
+          <div class="pdf-val-summary">
+            <div class="pvs-item"><div class="pvs-lbl">Monto banco</div><div class="pvs-val">$${fmtNum(montoBanco)}</div></div>
+            <div class="pvs-item"><div class="pvs-lbl">Total PDF (${montos.length} ítem${montos.length!==1?'s':''})</div><div class="pvs-val">$${fmtNum(suma)}</div></div>
+            <div class="pvs-item ${diffClass}"><div class="pvs-lbl">Diferencia</div><div class="pvs-val">${diffLabel}</div></div>
+          </div>
+          ${lmMontos.size > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--g4)">✓ = Monto también en registros LM seleccionados</div>` : ''}
+          ${!cuadra ? `<div style="margin-top:8px;padding:8px;background:#fffbeb;border:1px solid #fcd34d;border-radius:7px;font-size:11px;color:#92400e">
+            <b>Sugerencia:</b> La suma de montos del PDF no coincide exactamente con el monto bancario. Verifica si hay montos duplicados, retenciones o glosas que no son montos de pago.
+          </div>` : ''}
+        </div>
+      </div>
+      <div class="pdf-val-actions">
+        <button class="btn-pdf-clear" onclick="resetPdfValPanel();togglePdfValPanel()">🔄 Cargar otro PDF</button>
+        ${cuadra ? `<span style="font-size:11px;color:#047857;font-weight:600">✅ Los montos del comprobante cuadran con el monto bancario. Puedes confirmar la conciliación.</span>` : ''}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+// VALIDADOR PDFs MODAL — multi-PDF independiente
+// ══════════════════════════════════════════════
+let _pvmPdfs = [];
+let _pvmNextId = 1;
+let _pvmMatchResults = null; // resultados del último análisis de match
+
+(function initPdfjsWorker() {
+  if (typeof pdfjsLib !== 'undefined')
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+})();
+
+function showPdfValidatorModal() {
+  const m = document.getElementById('pdf-validator-modal');
+  if (m) { m.style.display = 'flex'; renderPvmList(); }
+}
+function hidePdfValidatorModal() {
+  const m = document.getElementById('pdf-validator-modal');
+  if (m) m.style.display = 'none';
+}
+function onPvmDrop(e) {
+  e.preventDefault();
+  const dz = document.getElementById('pvm-dropzone');
+  if (dz) { dz.style.borderColor='#a5b4fc'; dz.style.background='white'; }
+  Array.from(e.dataTransfer?.files||[]).filter(f=>f.type==='application/pdf').forEach(f=>addPvmFile(f));
+}
+function onPvmFileChange(input) {
+  Array.from(input.files||[]).forEach(f=>addPvmFile(f));
+  input.value='';
+}
+function addPvmFile(file) {
+  const id = _pvmNextId++;
+  _pvmPdfs.push({ id, name: file.name, status: 'loading', montos: [], suma: 0, error: null });
+  _pvmMatchResults = null;
+  renderPvmList();
+  processPvmFile(id, file);
+}
+async function processPvmFile(id, file) {
+  const entry = _pvmPdfs.find(p => p.id === id);
+  if (!entry) return;
+  try {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js no cargado. Recarga la página.');
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      fullText += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    const re = /\$?\s*([\d]{1,3}(?:\.[\d]{3})+|[\d]{5,})/g;
+    const seen = new Set(); const montos = []; let m;
+    while ((m = re.exec(fullText)) !== null) {
+      const val = parseInt(m[1].replace(/\./g,''), 10);
+      if (!isNaN(val) && val >= 1000 && !seen.has(val)) { seen.add(val); montos.push(val); }
+    }
+    montos.sort((a,b) => b - a);
+    entry.montos = montos;
+    entry.suma   = montos.reduce((s,v) => s+v, 0);
+    entry.status = montos.length ? 'ok' : 'empty';
+    entry.error  = montos.length ? null : 'Sin montos extraíbles. ¿PDF escaneado?';
+  } catch(err) {
+    entry.status = 'error'; entry.error = err.message;
+  }
+  _pvmMatchResults = null;
+  renderPvmList(); updatePvmBadge();
+}
+function removePvmFile(id) {
+  _pvmPdfs = _pvmPdfs.filter(p => p.id !== id);
+  _pvmMatchResults = null;
+  renderPvmList(); updatePvmBadge();
+}
+function pvmLimpiarTodo() {
+  _pvmPdfs = []; _pvmMatchResults = null;
+  renderPvmList(); updatePvmBadge();
+}
+function updatePvmBadge() {
+  const cnt = document.getElementById('btn-pdf-val-cnt');
+  if (!cnt) return;
+  const n = _pvmPdfs.filter(p => p.status==='ok').length;
+  cnt.style.display = n > 0 ? 'inline' : 'none';
+  cnt.textContent = n;
+}
+
+// ── SUBSET SUM — busca combinación de montos PDF que sumen exactamente target
+// Límite: máx 20 items en el conjunto para evitar explosión combinatoria
+function subsetSum(nums, target) {
+  if (!nums.length) return null;
+  // Exact single match first (fast path)
+  if (nums.includes(target)) return [target];
+  // DP subset sum (valores únicos, target como índice)
+  // Solo si target < 500M y nums.length <= 25
+  if (nums.length > 25 || target > 500000000) {
+    // Fallback: greedy — tomar los más grandes que no excedan
+    const sorted = [...nums].sort((a,b)=>b-a);
+    let rem = target; const chosen = [];
+    for (const v of sorted) { if (v <= rem) { chosen.push(v); rem -= v; if (rem===0) return chosen; } }
+    return null;
+  }
+  const n = nums.length;
+  // dp[i] = Set de índices que suman exactamente i
+  // Usamos Map: suma -> array de índices usados
+  const dp = new Map();
+  dp.set(0, []);
+  for (let i = 0; i < n; i++) {
+    const v = nums[i];
+    const entries = [...dp.entries()];
+    for (const [sum, idxs] of entries) {
+      const ns = sum + v;
+      if (ns === target) return [...idxs, i].map(j => nums[j]);
+      if (ns < target && !dp.has(ns)) dp.set(ns, [...idxs, i]);
+    }
+  }
+  return null;
+}
+
+// ── ANÁLISIS PRINCIPAL: cruzar montos PDF con registros sin conciliar
+function pvmAnalizarMatch() {
+  if (!DATA) return;
+
+  // Recopilar todos los montos PDF (todos los PDFs cargados)
+  const allPdfMontos = [];
+  _pvmPdfs.forEach(p => { if (p.status==='ok') allPdfMontos.push(...p.montos); });
+  const pdfSet = [...new Set(allPdfMontos)].sort((a,b) => b-a);
+
+  if (!pdfSet.length) { showToast('⚠ No hay PDFs con montos cargados'); return; }
+
+  // Registros sin conciliar: banco y LM
+  const bancoPend = (DATA.banco||[]).filter(r => r.estado==='NO CONCILIADO').map(r => ({
+    src: 'banco', idx: r._idx, monto: r.monto,
+    label: 'Banco · ' + (r.descripcion||'').slice(0,40) + ' · $' + fmtNum(r.monto),
+    r
+  }));
+  const lmPend = (DATA.lm||[]).filter(r => !r.conciliado && !r.gnc && !r.anulado).map(r => ({
+    src: 'lm', idx: r._idx, monto: r.debe > 0 ? r.debe : r.haber,
+    label: 'LM · ' + (r.glosa||'').slice(0,40) + ' · $' + fmtNum(r.debe>0?r.debe:r.haber),
+    r
+  }));
+  const pendientes = [...bancoPend, ...lmPend];
+
+  const results = [];
+  const pdfUsados = new Set(); // montos PDF ya asignados en matches exactos
+
+  // PASS 1: para cada registro pendiente, buscar combinación en PDF que sume exactamente
+  for (const reg of pendientes) {
+    const disponibles = pdfSet.filter(v => !pdfUsados.has(v));
+    const match = subsetSum(disponibles, reg.monto);
+    if (match) {
+      match.forEach(v => pdfUsados.add(v));
+      results.push({ reg, match, tipo: match.length===1 ? 'exacto' : 'combinado', diff: 0 });
+    } else {
+      // Sin match exacto — buscar el más cercano (diff mínima)
+      let bestDiff = Infinity; let bestVal = null;
+      for (const v of disponibles) {
+        const d = Math.abs(v - reg.monto);
+        if (d < bestDiff) { bestDiff = d; bestVal = v; }
+      }
+      results.push({ reg, match: bestVal ? [bestVal] : [], tipo: 'sin-match', diff: bestDiff });
+    }
+  }
+
+  // Montos PDF que no matchearon con nadie
+  const pdfSinUsar = pdfSet.filter(v => !pdfUsados.has(v));
+
+  _pvmMatchResults = { results, pdfSinUsar, pdfSet, pendientes };
+  renderPvmResultados();
+}
+
+function pvmToggleDetail(id) {
+  const el  = document.getElementById('pvm-detail-'+id);
+  const arr = document.getElementById('pvm-arr-'+id);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (arr) arr.style.transform = open ? '' : 'rotate(180deg)';
+}
+function pvmBuscarMonto(monto) {
+  hidePdfValidatorModal();
+  const input = document.getElementById('r-search');
+  if (input) { input.value = fmtNum(monto); onSearch(); showToast('🔍 Buscando $'+fmtNum(monto)+' en tabla'); }
+}
+
+// ── RENDER lista de PDFs cargados (panel superior)
+function renderPvmList() {
+  const list   = document.getElementById('pvm-list');
+  const footer = document.getElementById('pvm-footer');
+  if (!list) return;
+
+  if (_pvmPdfs.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:32px 20px;color:var(--g4);font-size:13px">Arrastra uno o más PDFs de comprobante de egreso arriba ☝</div>';
+    if (footer) footer.style.display = 'none';
+    document.getElementById('pvm-resultados').innerHTML = '';
+    return;
+  }
+
+  const okPdfs   = _pvmPdfs.filter(p => p.status==='ok');
+  const totalSum = okPdfs.reduce((s,p) => s+p.suma, 0);
+  const allLoading = _pvmPdfs.some(p => p.status==='loading');
+
+  list.innerHTML = _pvmPdfs.map(p => {
+    const shortName = p.name.length > 55 ? p.name.slice(0,52)+'…' : p.name;
+    let badge = '';
+    if      (p.status==='loading') badge = '<span style="background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:8px;font-size:10px">⏳ Leyendo…</span>';
+    else if (p.status==='error'||p.status==='empty') badge = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:8px;font-size:10px">⚠ '+esc(p.error)+'</span>';
+    else badge = '<span style="background:#d1fae5;color:#047857;padding:2px 8px;border-radius:8px;font-size:10px">✓ '+p.montos.length+' montos · $'+fmtNum(p.suma)+'</span>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--g1)">'+
+      '<span style="font-size:14px">📄</span>'+
+      '<span style="flex:1;font-size:12px;font-weight:600;color:var(--g7)" title="'+esc(p.name)+'">'+esc(shortName)+'</span>'+
+      badge+
+      '<button onclick="removePvmFile('+p.id+')" style="padding:2px 8px;background:white;border:1px solid var(--g2);border-radius:5px;font-size:11px;color:var(--g4);cursor:pointer;margin-left:6px">✕</button>'+
+      '</div>';
+  }).join('');
+
+  if (footer) {
+    footer.style.display = 'flex';
+    document.getElementById('pvm-global-sum').innerHTML =
+      okPdfs.length+' PDF'+(okPdfs.length!==1?'s':'')+' cargados &nbsp;·&nbsp; <b style="color:#4338ca;font-family:var(--mono)">$'+fmtNum(totalSum)+' total</b>';
+  }
+
+  // Auto-analizar si hay PDFs listos y no hay resultados previos
+  if (okPdfs.length > 0 && !allLoading && !_pvmMatchResults) {
+    pvmAnalizarMatch();
+  } else if (_pvmMatchResults) {
+    renderPvmResultados();
+  }
+}
+
+// ── RENDER resultados del análisis de match
+function renderPvmResultados() {
+  const el = document.getElementById('pvm-resultados');
+  if (!el || !_pvmMatchResults) return;
+  const { results, pdfSinUsar, pdfSet } = _pvmMatchResults;
+
+  const exactos   = results.filter(r => r.tipo==='exacto');
+  const combinados= results.filter(r => r.tipo==='combinado');
+  const sinMatch  = results.filter(r => r.tipo==='sin-match');
+
+  let html = '<div style="padding:16px 20px 0">';
+
+  // Resumen
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  if (exactos.length)    html += '<div style="background:#f0fdf4;border:1px solid #6ee7b7;border-radius:8px;padding:8px 14px;font-size:12px"><b style="color:#047857">'+exactos.length+'</b> <span style="color:var(--g5)">match exacto</span></div>';
+  if (combinados.length) html += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:12px"><b style="color:#1d4ed8">'+combinados.length+'</b> <span style="color:var(--g5)">match combinado</span></div>';
+  if (sinMatch.length)   html += '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 14px;font-size:12px"><b style="color:#c2410c">'+sinMatch.length+'</b> <span style="color:var(--g5)">sin match</span></div>';
+  if (pdfSinUsar.length) html += '<div style="background:#f8faff;border:1px solid var(--g2);border-radius:8px;padding:8px 14px;font-size:12px"><b style="color:var(--g5)">'+pdfSinUsar.length+'</b> <span style="color:var(--g5)">montos PDF sobrantes</span></div>';
+  html += '</div>';
+
+  // Tabla de resultados
+  html += '<div style="border:1px solid var(--g2);border-radius:10px;overflow:hidden;margin-bottom:16px">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html += '<thead><tr style="background:var(--navy)">'
+    +'<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.5px">FUENTE</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.5px">MONTO PENDIENTE</th>'
+    +'<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.5px">MATCH EN PDF</th>'
+    +'<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.5px">ESTADO</th>'
+    +'<th style="padding:8px 12px;font-size:10px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.5px"></th>'
+    +'</tr></thead><tbody>';
+
+  // Primero sin match, luego combinados, luego exactos
+  const ordered = [...sinMatch, ...combinados, ...exactos];
+  for (const r of ordered) {
+    let statusCell, matchCell, rowStyle = '';
+    if (r.tipo==='exacto') {
+      rowStyle = 'background:#f0fdf4';
+      statusCell = '<span style="background:#d1fae5;color:#047857;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">✓ Exacto</span>';
+      matchCell  = '<span style="font-family:var(--mono);color:#047857;font-weight:700">$'+fmtNum(r.match[0])+'</span>';
+    } else if (r.tipo==='combinado') {
+      rowStyle = 'background:#eff6ff';
+      statusCell = '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">∑ Combinado</span>';
+      matchCell  = r.match.map(v=>'<span style="font-family:var(--mono);font-size:11px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;margin-right:3px">$'+fmtNum(v)+'</span>').join('+');
+    } else {
+      rowStyle = 'background:#fff7ed';
+      statusCell = '<span style="background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">✕ Sin match</span>';
+      matchCell  = r.match.length
+        ? '<span style="font-family:var(--mono);font-size:11px;color:#9ca3af">más cercano: $'+fmtNum(r.match[0])+' (diff $'+fmtNum(r.diff)+')</span>'
+        : '<span style="color:var(--g4);font-size:11px">—</span>';
+    }
+    const srcTag = r.reg.src==='banco'
+      ? '<span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">BANCO</span>'
+      : '<span style="background:#ede9fe;color:#5b21b6;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">LM</span>';
+    const desc = (r.reg.r.descripcion||r.reg.r.glosa||'').slice(0,35);
+    html += '<tr style="'+rowStyle+';border-bottom:1px solid var(--g2)">'
+      +'<td style="padding:8px 12px">'+srcTag+' <span style="color:var(--g5);font-size:11px">'+esc(desc)+'</span></td>'
+      +'<td style="padding:8px 12px;text-align:right;font-family:var(--mono);font-weight:700">$'+fmtNum(r.reg.monto)+'</td>'
+      +'<td style="padding:8px 12px">'+matchCell+'</td>'
+      +'<td style="padding:8px 12px;text-align:center">'+statusCell+'</td>'
+      +'<td style="padding:8px 10px">'
+        +(r.tipo!=='sin-match'
+          ? '<button onclick="pvmBuscarMonto('+r.reg.monto+')" style="padding:2px 8px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font)">🔍 Ver</button>'
+          : '')
+      +'</td>'
+      +'</tr>';
+  }
+  html += '</tbody></table></div>';
+
+  // Montos PDF sobrantes
+  if (pdfSinUsar.length) {
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g4);margin-bottom:6px">Montos PDF no asignados a ningún pendiente</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    pdfSinUsar.forEach(v => {
+      html += '<span style="font-family:var(--mono);font-size:11px;background:#f1f5f9;color:#475569;padding:3px 9px;border-radius:6px;cursor:pointer" onclick="pvmBuscarMonto('+v+')" title="Buscar en tabla">$'+fmtNum(v)+'</span>';
+    });
+    html += '</div></div>';
+  }
+
+  html += '<div style="display:flex;justify-content:flex-end;padding-bottom:16px">'
+    +'<button onclick="pvmAnalizarMatch()" style="padding:6px 14px;background:#4338ca;color:white;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">🔄 Re-analizar</button>'
+    +'</div>';
+  html += '</div>';
+
+  el.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════
